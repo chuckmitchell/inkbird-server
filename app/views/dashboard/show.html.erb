@@ -1,0 +1,242 @@
+<% content_for :title, @device ? "#{@device.name} · Inkbird Telemetry" : "Inkbird ITC-308 Telemetry" %>
+
+<header class="mb-8 flex flex-col gap-4 border-b border-slate-800 pb-6 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+        <%= @device&.name || "Cottage ITC-308" %>
+      </h1>
+
+      <% if @device %>
+        <% if @device.online? %>
+          <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-inset ring-emerald-500/30">
+            <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Online
+          </span>
+        <% else %>
+          <span class="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-300 ring-1 ring-inset ring-amber-500/30">
+            <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+            Stale / Offline
+          </span>
+        <% end %>
+      <% else %>
+        <span class="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-400 ring-1 ring-inset ring-slate-700">
+          Awaiting First Payload
+        </span>
+      <% end %>
+    </div>
+
+    <p class="mt-1.5 text-sm text-slate-400">
+      <% if @device %>
+        Device ID: <code class="rounded bg-slate-900 px-1.5 py-0.5 font-mono text-xs text-slate-300"><%= @device.tuya_device_id %></code>
+        <% if @device.last_seen_at %>
+          · Last seen <time datetime="<%= @device.last_seen_at.iso8601 %>" class="font-medium text-slate-200"><%= time_ago_in_words(@device.last_seen_at) %> ago</time>
+          (<%= @device.last_seen_at.utc.strftime("%Y-%m-%d %H:%M:%S UTC") %>)
+        <% end %>
+      <% else %>
+        Inkbird ITC-308 Wi-Fi Smart Thermostat Telemetry Server
+      <% end %>
+    </p>
+  </div>
+
+  <% if @devices.size > 1 %>
+    <nav aria-label="Select thermostat device" class="flex items-center gap-2">
+      <% @devices.each do |dev| %>
+        <% active = dev.id == @device&.id %>
+        <%= link_to root_path(device_id: dev.tuya_device_id, range: @range),
+              class: "rounded-lg px-3 py-1.5 text-xs font-medium transition #{active ? 'bg-sky-500 text-slate-950 font-semibold' : 'bg-slate-900 text-slate-300 hover:bg-slate-800'}" do %>
+          <%= dev.name %> (<%= dev.tuya_device_id.last(6) %>)
+        <% end %>
+      <% end %>
+    </nav>
+  <% end %>
+</header>
+
+<% if @device %>
+  <section aria-label="Current Thermostat Status" class="status-card-grid mb-8">
+    <article class="status-card rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-sm">
+      <header class="flex items-center justify-between">
+        <h2 class="text-sm font-medium text-slate-400">Current Temperature</h2>
+        <span class="rounded-md bg-sky-500/10 px-2 py-0.5 font-mono text-xs text-sky-300">
+          Unit: °<%= @device.last_unit || "C" %>
+        </span>
+      </header>
+      <div class="flex items-baseline gap-3">
+        <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          <%= @device.last_temp_c.present? ? sprintf("%.1f°C", @device.last_temp_c) : "—" %>
+        </p>
+        <% if @device.last_temp_f.present? %>
+          <p class="text-lg font-medium text-slate-400">
+            (<%= sprintf("%.1f°F", @device.last_temp_f) %>)
+          </p>
+        <% end %>
+      </div>
+      <footer class="border-t border-slate-800/80 pt-3 text-xs text-slate-400">
+        <% if @device.last_seen_at %>
+          Updated <%= time_ago_in_words(@device.last_seen_at) %> ago
+        <% else %>
+          No temperature recorded yet
+        <% end %>
+      </footer>
+    </article>
+
+    <article class="status-card rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-sm">
+      <header class="flex items-center justify-between">
+        <h2 class="text-sm font-medium text-slate-400">Relay &amp; Alarm Status</h2>
+        <% relay = (@device.last_relay_state || "unknown").downcase %>
+        <% relay_badge_classes = case relay
+             when "cooling" then "bg-cyan-500/15 text-cyan-300 ring-cyan-500/30"
+             when "heating" then "bg-rose-500/15 text-rose-300 ring-rose-500/30"
+             when "idle"    then "bg-slate-800 text-slate-300 ring-slate-700"
+             else "bg-slate-800 text-slate-400 ring-slate-700"
+           end %>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ring-1 ring-inset <%= relay_badge_classes %>">
+          <%= relay %>
+        </span>
+      </header>
+      <div>
+        <% active_alarms = @latest_reading&.active_alarms || [] %>
+        <% if active_alarms.any? %>
+          <ul class="space-y-1 text-sm font-semibold text-rose-400">
+            <% active_alarms.each do |alarm_name| %>
+              <li>⚠️ <%= alarm_name %></li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="text-2xl font-semibold text-emerald-400">All Normal</p>
+          <p class="mt-1 text-xs text-slate-400">No high/low/sensor alarms triggered</p>
+        <% end %>
+      </div>
+      <footer class="border-t border-slate-800/80 pt-3 text-xs text-slate-400">
+        <% if @latest_reading %>
+          Limits: Low <%= @latest_reading.low_alarm_limit || "—" %>°C · High <%= @latest_reading.high_alarm_limit || "—" %>°C · Delay <%= @latest_reading.compressor_delay_min || "—" %>m
+        <% else %>
+          Alarm limits unavailable
+        <% end %>
+      </footer>
+    </article>
+
+    <article class="status-card rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-sm">
+      <header class="flex items-center justify-between">
+        <h2 class="text-sm font-medium text-slate-400"><%= @range_meta[:label] %> Summary</h2>
+        <span class="text-xs font-mono text-slate-400"><%= @stats[:count] %> readings</span>
+      </header>
+      <dl class="grid grid-cols-3 gap-2 text-center">
+        <div class="rounded-lg bg-slate-950/60 p-2.5">
+          <dt class="text-xs text-slate-400">Min</dt>
+          <dd class="mt-0.5 text-lg font-semibold text-cyan-300">
+            <%= @stats[:min_c].present? ? "#{@stats[:min_c]}°C" : "—" %>
+          </dd>
+        </div>
+        <div class="rounded-lg bg-slate-950/60 p-2.5">
+          <dt class="text-xs text-slate-400">Avg</dt>
+          <dd class="mt-0.5 text-lg font-semibold text-white">
+            <%= @stats[:avg_c].present? ? "#{@stats[:avg_c]}°C" : "—" %>
+          </dd>
+        </div>
+        <div class="rounded-lg bg-slate-950/60 p-2.5">
+          <dt class="text-xs text-slate-400">Max</dt>
+          <dd class="mt-0.5 text-lg font-semibold text-amber-300">
+            <%= @stats[:max_c].present? ? "#{@stats[:max_c]}°C" : "—" %>
+          </dd>
+        </div>
+      </dl>
+      <footer class="border-t border-slate-800/80 pt-3 text-xs text-slate-400">
+        Aggregated by <%= @range_meta[:bucket_label].downcase %>
+      </footer>
+    </article>
+  </section>
+
+  <section aria-labelledby="chart-heading" class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-sm">
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 id="chart-heading" class="text-lg font-semibold text-white">Current Temperature (°C)</h2>
+        <p class="text-xs text-slate-400">
+          Showing <%= @range_meta[:label].downcase %> (<%= @range_meta[:bucket_label].downcase %>)
+        </p>
+      </div>
+
+      <div role="group" aria-label="Time range filter" class="inline-flex rounded-xl bg-slate-950 p-1 ring-1 ring-inset ring-slate-800">
+        <% DashboardController::VALID_RANGES.each_key do |range_key| %>
+          <% active = (@range == range_key) %>
+          <%= link_to range_key,
+                root_path(range: range_key, device_id: params[:device_id]),
+                class: "rounded-lg px-3.5 py-1.5 text-xs font-semibold transition #{active ? 'bg-sky-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'}" %>
+        <% end %>
+      </div>
+    </div>
+
+    <% if @chart_data.present? %>
+      <div class="rounded-xl bg-slate-950/50 p-4">
+        <%= line_chart @chart_data,
+              id: "temperature-chart",
+              height: "340px",
+              suffix: "°C",
+              colors: ["#38bdf8"],
+              curve: true,
+              points: false,
+              empty: "No temperature readings in this time window",
+              library: {
+                scales: {
+                  x: {
+                    ticks: { color: "#94a3b8" },
+                    grid: { color: "rgba(148, 163, 184, 0.08)" }
+                  },
+                  y: {
+                    ticks: { color: "#94a3b8" },
+                    grid: { color: "rgba(148, 163, 184, 0.12)" }
+                  }
+                }
+              } %>
+      </div>
+    <% else %>
+      <div class="flex h-64 flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 bg-slate-950/40 p-6 text-center">
+        <p class="text-sm font-medium text-slate-300">No readings recorded in the <%= @range_meta[:label].downcase %>.</p>
+        <p class="mt-1 text-xs text-slate-500">Try selecting a wider time range or wait for the next Android bridge upload.</p>
+      </div>
+    <% end %>
+  </section>
+
+  <% if @recent_readings.any? %>
+    <section aria-labelledby="recent-readings-heading" class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-sm">
+      <h2 id="recent-readings-heading" class="mb-4 text-base font-semibold text-white">Recent Telemetry Readings</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-slate-800 text-xs uppercase tracking-wider text-slate-400">
+            <tr>
+              <th scope="col" class="pb-3 pr-4">Timestamp (UTC)</th>
+              <th scope="col" class="pb-3 px-4">Temp (°C)</th>
+              <th scope="col" class="pb-3 px-4">Temp (°F)</th>
+              <th scope="col" class="pb-3 px-4">Relay</th>
+              <th scope="col" class="pb-3 pl-4">Alarms</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 font-mono text-xs">
+            <% @recent_readings.each do |reading| %>
+              <tr class="hover:bg-slate-800/30">
+                <td class="py-2.5 pr-4 text-slate-300"><%= reading.recorded_at.utc.strftime("%Y-%m-%d %H:%M:%S UTC") %></td>
+                <td class="py-2.5 px-4 font-semibold text-white"><%= reading.current_temp_c.present? ? sprintf("%.1f°C", reading.current_temp_c) : "—" %></td>
+                <td class="py-2.5 px-4 text-slate-400"><%= reading.current_temp_f.present? ? sprintf("%.1f°F", reading.current_temp_f) : "—" %></td>
+                <td class="py-2.5 px-4 capitalize text-slate-300"><%= reading.relay_state %></td>
+                <td class="py-2.5 pl-4">
+                  <% if reading.active_alarms.any? %>
+                    <span class="text-rose-400"><%= reading.active_alarms.join(", ") %></span>
+                  <% else %>
+                    <span class="text-emerald-400">OK</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+<% else %>
+  <section class="rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-12 text-center">
+    <h2 class="text-lg font-semibold text-white">No Thermostat Telemetry Received Yet</h2>
+    <p class="mx-auto mt-2 max-w-lg text-sm text-slate-400">
+      Send an authenticated <code class="rounded bg-slate-900 px-1.5 py-0.5 font-mono text-xs text-sky-300">POST /api/v1/telemetry</code> request from the Android bridge app to populate this dashboard.
+    </p>
+  </section>
+<% end %>

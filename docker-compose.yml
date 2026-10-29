@@ -1,0 +1,30 @@
+services:
+  inkbird:
+    build: .
+    container_name: inkbird
+    restart: always
+    environment:
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      INGEST_BEARER_TOKEN: ${INGEST_BEARER_TOKEN}
+      SOLID_QUEUE_IN_PUMA: "true"
+      RAILS_MAX_THREADS: "3"
+    volumes:
+      - /srv/inkbird/storage:/rails/storage
+    networks:
+      - proxy_network
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  proxy_network:
+    external: true
