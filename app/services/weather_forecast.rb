@@ -2,49 +2,63 @@ require "net/http"
 require "json"
 
 class WeatherForecast
-  CACHE_KEY = "open_meteo_current_weather_v1"
+  CACHE_KEY = "env_canada_current_weather_v1"
   CACHE_TTL = 12.hours # Disappear after 12 hours if upstream weather API remains unavailable
   CACHE_REFRESH_INTERVAL = 1.hour
 
   DEFAULT_LATITUDE = 44.3769
   DEFAULT_LONGITUDE = -64.3188
   DEFAULT_LOCATION_NAME = "Lunenburg, NS"
-  DEFAULT_TIMEZONE = "America/Halifax"
 
-  CARDINAL_DIRECTIONS = %w[N NNE NE ENE E ESE SE SSE S SSW SW WSW W WNW NW NNW].freeze
-
-  # Mapping of WMO weather interpretation codes (WW) to condition text and icon key
-  # https://open-meteo.com/en/docs
-  WMO_CODES = {
-    0 => { label: "Clear sky", icon_day: "clear-day", icon_night: "clear-night" },
-    1 => { label: "Mainly clear", icon_day: "clear-day", icon_night: "clear-night" },
-    2 => { label: "Partly cloudy", icon_day: "partly-cloudy-day", icon_night: "partly-cloudy-night" },
-    3 => { label: "Overcast", icon_day: "cloudy", icon_night: "cloudy" },
-    45 => { label: "Fog", icon_day: "fog", icon_night: "fog" },
-    48 => { label: "Depositing rime fog", icon_day: "fog", icon_night: "fog" },
-    51 => { label: "Light drizzle", icon_day: "drizzle", icon_night: "drizzle" },
-    53 => { label: "Moderate drizzle", icon_day: "drizzle", icon_night: "drizzle" },
-    55 => { label: "Dense drizzle", icon_day: "drizzle", icon_night: "drizzle" },
-    56 => { label: "Freezing drizzle", icon_day: "sleet", icon_night: "sleet" },
-    57 => { label: "Freezing drizzle", icon_day: "sleet", icon_night: "sleet" },
-    61 => { label: "Slight rain", icon_day: "rain", icon_night: "rain" },
-    62 => { label: "Moderate rain", icon_day: "rain", icon_night: "rain" },
-    63 => { label: "Moderate rain", icon_day: "rain", icon_night: "rain" },
-    65 => { label: "Heavy rain", icon_day: "heavy-rain", icon_night: "heavy-rain" },
-    66 => { label: "Freezing rain", icon_day: "sleet", icon_night: "sleet" },
-    67 => { label: "Freezing rain", icon_day: "sleet", icon_night: "sleet" },
-    71 => { label: "Slight snow", icon_day: "snow", icon_night: "snow" },
-    73 => { label: "Moderate snow", icon_day: "snow", icon_night: "snow" },
-    75 => { label: "Heavy snow", icon_day: "snow", icon_night: "snow" },
-    77 => { label: "Snow grains", icon_day: "snow", icon_night: "snow" },
-    80 => { label: "Rain showers", icon_day: "rain", icon_night: "rain" },
-    81 => { label: "Rain showers", icon_day: "rain", icon_night: "rain" },
-    82 => { label: "Violent rain showers", icon_day: "heavy-rain", icon_night: "heavy-rain" },
-    85 => { label: "Snow showers", icon_day: "snow", icon_night: "snow" },
-    86 => { label: "Heavy snow showers", icon_day: "snow", icon_night: "snow" },
-    95 => { label: "Thunderstorm", icon_day: "thunderstorm", icon_night: "thunderstorm" },
-    96 => { label: "Thunderstorm with hail", icon_day: "thunderstorm", icon_night: "thunderstorm" },
-    99 => { label: "Thunderstorm with hail", icon_day: "thunderstorm", icon_night: "thunderstorm" }
+  # Environment Canada iconCode to SVG icon key & condition fallback mapping
+  EC_ICON_CODES = {
+    "00" => { icon: "clear-day", label: "Sunny" },
+    "01" => { icon: "clear-day", label: "Mainly sunny" },
+    "02" => { icon: "partly-cloudy-day", label: "Partly cloudy" },
+    "03" => { icon: "partly-cloudy-day", label: "Mainly cloudy" },
+    "04" => { icon: "partly-cloudy-day", label: "Increasing cloud" },
+    "05" => { icon: "partly-cloudy-day", label: "Clearing" },
+    "06" => { icon: "rain", label: "Showers" },
+    "07" => { icon: "sleet", label: "Rain or snow" },
+    "08" => { icon: "snow", label: "Flurries" },
+    "09" => { icon: "rain", label: "Chance of showers" },
+    "10" => { icon: "cloudy", label: "Cloudy" },
+    "11" => { icon: "rain", label: "Periods of rain" },
+    "12" => { icon: "rain", label: "Periods of rain" },
+    "13" => { icon: "heavy-rain", label: "Heavy rain" },
+    "14" => { icon: "sleet", label: "Freezing rain" },
+    "15" => { icon: "sleet", label: "Freezing drizzle" },
+    "16" => { icon: "snow", label: "Periods of snow" },
+    "17" => { icon: "snow", label: "Periods of snow" },
+    "18" => { icon: "snow", label: "Heavy snow" },
+    "19" => { icon: "thunderstorm", label: "Thunderstorm" },
+    "22" => { icon: "partly-cloudy-day", label: "A mix of sun and cloud" },
+    "23" => { icon: "fog", label: "Haze" },
+    "24" => { icon: "fog", label: "Fog" },
+    "25" => { icon: "snow", label: "Drifting snow" },
+    "26" => { icon: "snow", label: "Ice crystals" },
+    "27" => { icon: "sleet", label: "Ice pellets" },
+    "28" => { icon: "drizzle", label: "Drizzle" },
+    "29" => { icon: "partly-cloudy-day", label: "A mix of sun and cloud" },
+    "30" => { icon: "clear-night", label: "Clear" },
+    "31" => { icon: "clear-night", label: "Mainly clear" },
+    "32" => { icon: "partly-cloudy-night", label: "Partly cloudy" },
+    "33" => { icon: "partly-cloudy-night", label: "Mainly cloudy" },
+    "34" => { icon: "partly-cloudy-night", label: "Increasing cloud" },
+    "35" => { icon: "partly-cloudy-night", label: "Clearing" },
+    "36" => { icon: "rain", label: "Chance of showers" },
+    "37" => { icon: "sleet", label: "Chance of flurries or rain" },
+    "38" => { icon: "snow", label: "Chance of flurries" },
+    "39" => { icon: "thunderstorm", label: "Thunderstorm" },
+    "40" => { icon: "snow", label: "Blowing snow" },
+    "41" => { icon: "thunderstorm", label: "Funnel cloud" },
+    "42" => { icon: "thunderstorm", label: "Tornado" },
+    "43" => { icon: "cloudy", label: "Windy" },
+    "44" => { icon: "fog", label: "Smoke" },
+    "45" => { icon: "fog", label: "Dense fog" },
+    "46" => { icon: "thunderstorm", label: "Thunderstorm" },
+    "47" => { icon: "thunderstorm", label: "Thunderstorm" },
+    "48" => { icon: "fog", label: "Waterspout" }
   }.freeze
 
   class << self
@@ -53,12 +67,7 @@ class WeatherForecast
         refresh!
       else
         cached = Rails.cache.read(CACHE_KEY)
-        if cached.present?
-          # If data is present but older than refresh interval, kick off a refresh or warm it
-          cached
-        else
-          refresh!
-        end
+        cached.presence || refresh!
       end
     rescue => e
       Rails.logger.warn("[WeatherForecast] Failed to fetch current weather: #{e.class}: #{e.message}")
@@ -86,18 +95,8 @@ class WeatherForecast
       ENV["WEATHER_LOCATION_NAME"].presence || DEFAULT_LOCATION_NAME
     end
 
-    def timezone
-      ENV["WEATHER_TIMEZONE"].presence || DEFAULT_TIMEZONE
-    end
-
     def forecast_url
       ENV["WEATHER_FORECAST_URL"].presence || "https://weather.gc.ca/en/location/index.html?coords=#{latitude},#{longitude}"
-    end
-
-    def degrees_to_cardinal(deg)
-      return nil unless deg
-      idx = ((deg % 360) / 22.5).round % 16
-      CARDINAL_DIRECTIONS[idx]
     end
 
     def c_to_f(c)
@@ -108,69 +107,80 @@ class WeatherForecast
     private
 
     def fetch_from_api
-      uri = URI("https://api.open-meteo.com/v1/forecast")
-      params = {
-        latitude: latitude,
-        longitude: longitude,
-        current: "temperature_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m",
-        daily: "temperature_2m_max,temperature_2m_min",
-        timezone: timezone,
-        forecast_days: 1
-      }
-      uri.query = URI.encode_www_form(params)
+      uri = URI(forecast_url)
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
-      http.open_timeout = 3
-      http.read_timeout = 4
+      http.open_timeout = 5
+      http.read_timeout = 6
 
       request = Net::HTTP::Get.new(uri)
-      request["User-Agent"] = "InkbirdServer/1.0 (telemetry-cottage)"
+      request["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      request["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
 
       response = http.request(request)
       return nil unless response.is_a?(Net::HTTPSuccess)
 
-      parse_payload(JSON.parse(response.body))
+      parse_html_payload(response.body)
     end
 
-    def parse_payload(payload)
-      curr = payload["current"] || {}
-      daily = payload["daily"] || {}
+    def parse_html_payload(html)
+      match = html.match(/window\.__INITIAL_STATE__=(.+?);\(function/m)
+      return nil unless match
 
-      temp_c = curr["temperature_2m"]&.to_f&.round(1)
-      weather_code = curr["weather_code"]&.to_i
-      is_day = curr["is_day"] == 1
-      wind_speed_kmh = curr["wind_speed_10m"]&.to_f&.round(0)&.to_i
-      wind_direction_deg = curr["wind_direction_10m"]&.to_f
+      state = JSON.parse(match[1])
+      location_container = state.dig("location", "location") || {}
+      loc_data = location_container.values.first
+      return nil unless loc_data
 
-      high_c = daily["temperature_2m_max"]&.first&.to_f&.round(1)
-      low_c = daily["temperature_2m_min"]&.first&.to_f&.round(1)
+      obs = loc_data["obs"] || {}
+      hourly = loc_data["hourly"] || []
+      daily_forecasts = loc_data.dig("forecast", "daily") || []
 
-      mapping = WMO_CODES[weather_code] || {
-        label: "Unknown",
-        icon_day: is_day ? "clear-day" : "clear-night",
-        icon_night: "clear-night"
-      }
+      # Temperatures
+      temp_c = obs.dig("temperature", "metric")&.to_f&.round(1)
+      temp_f = obs.dig("temperature", "imperial")&.to_f&.round(1) || c_to_f(temp_c)
 
-      icon_key = is_day ? mapping[:icon_day] : mapping[:icon_night]
-      wind_cardinal = degrees_to_cardinal(wind_direction_deg)
+      # High & Low from daily forecast
+      high_c = daily_forecasts[0]&.dig("temperature", "periodHigh")&.to_f&.round(1) ||
+               daily_forecasts[0]&.dig("temperature", "metric")&.to_f&.round(1)
+      low_c = daily_forecasts[1]&.dig("temperature", "periodLow")&.to_f&.round(1) ||
+              daily_forecasts[1]&.dig("temperature", "metric")&.to_f&.round(1)
+      high_f = daily_forecasts[0]&.dig("temperature", "imperial")&.to_f&.round(1) || c_to_f(high_c)
+      low_f = daily_forecasts[1]&.dig("temperature", "imperial")&.to_f&.round(1) || c_to_f(low_c)
+
+      # Wind
+      wind_speed_kmh = obs.dig("windSpeed", "metric")&.to_i
+      wind_cardinal = obs["windDirection"].presence
+
+      # Condition label and icon
+      icon_code = obs["iconCode"].to_s.rjust(2, "0")
+      condition_label = obs["condition"].presence ||
+                        hourly[0]&.dig("condition").presence ||
+                        EC_ICON_CODES[icon_code]&.dig(:label) ||
+                        daily_forecasts[0]&.dig("summary").presence ||
+                        "Current Conditions"
+
+      icon_key = EC_ICON_CODES[icon_code]&.dig(:icon) ||
+                 EC_ICON_CODES[hourly[0]&.dig("iconCode").to_s.rjust(2, "0")]&.dig(:icon) ||
+                 "partly-cloudy-day"
+
+      station_name = obs["observedAt"].presence || location_name
 
       {
         location_name: location_name,
+        station_name: station_name,
         forecast_url: forecast_url,
         fetched_at: Time.current.iso8601,
-        is_day: is_day,
-        weather_code: weather_code,
-        condition_label: mapping[:label],
+        condition_label: condition_label,
         icon_key: icon_key,
         temp_c: temp_c,
-        temp_f: c_to_f(temp_c),
+        temp_f: temp_f,
         high_c: high_c,
-        high_f: c_to_f(high_c),
+        high_f: high_f,
         low_c: low_c,
-        low_f: c_to_f(low_c),
+        low_f: low_f,
         wind_speed_kmh: wind_speed_kmh,
-        wind_direction_deg: wind_direction_deg,
         wind_direction_cardinal: wind_cardinal
       }.with_indifferent_access
     end

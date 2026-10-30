@@ -64,15 +64,36 @@ module Api
 
       private
 
+      MAX_JSON_KEYS = 50
+      MAX_JSON_STRING_BYTES = 256
+
       def normalize_json_object(value)
-        case value
+        raw_hash = case value
         when ActionController::Parameters
           value.to_unsafe_h
         when Hash
           value
         else
-          {}
+          return {}
         end
+
+        sanitized = {}
+        raw_hash.each do |k, v|
+          break if sanitized.size >= MAX_JSON_KEYS
+
+          key = k.to_s.slice(0, 64)
+          next if key.empty?
+
+          sanitized[key] = case v
+          when Numeric, TrueClass, FalseClass, NilClass
+            v
+          when String
+            v.byteslice(0, MAX_JSON_STRING_BYTES)
+          else
+            v.to_s.byteslice(0, MAX_JSON_STRING_BYTES)
+          end
+        end
+        sanitized
       end
     end
   end

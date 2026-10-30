@@ -4,6 +4,8 @@ module Api
   module V1
     class PhotosController < BaseController
       JPEG_MAGIC_BYTES = "\xFF\xD8\xFF".b.freeze
+      MAX_IMAGE_BYTES = 5.megabytes
+      MAX_BASE64_BYTES = ((MAX_IMAGE_BYTES * 4) / 3) + 1024
 
       def create
         device_id = params[:device_id].to_s.strip
@@ -12,6 +14,10 @@ module Api
 
         if device_id.blank? || timestamp_str.blank? || image_base64.blank?
           return render json: { error: "device_id, timestamp_utc, and image_base64 are required" }, status: :unprocessable_entity
+        end
+
+        if image_base64.bytesize > MAX_BASE64_BYTES
+          return render json: { error: "image_base64 exceeds maximum allowed size of 5 MB" }, status: :unprocessable_entity
         end
 
         begin
@@ -68,9 +74,10 @@ module Api
 
       def decode_jpeg_bytes(raw_base64)
         cleaned = raw_base64.sub(/\Adata:image\/[a-zA-Z0-9.+-]+;base64,/, "").gsub(/\s+/, "")
-        return nil if cleaned.empty?
+        return nil if cleaned.empty? || cleaned.bytesize > MAX_BASE64_BYTES
 
         decoded = Base64.strict_decode64(cleaned).b
+        return nil if decoded.bytesize > MAX_IMAGE_BYTES
         return nil unless decoded.start_with?(JPEG_MAGIC_BYTES)
 
         decoded
