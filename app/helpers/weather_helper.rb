@@ -2,6 +2,7 @@ module WeatherHelper
   # Renders multi-tone inline SVG icons tailored for dark theme.
   # Icons supported: clear-day, clear-night, partly-cloudy-day, partly-cloudy-night, cloudy, fog, drizzle, rain, heavy-rain, sleet, snow, thunderstorm.
   def weather_icon_svg(icon_key, css_class: "w-12 h-12 flex-shrink-0")
+    css_class = ERB::Util.html_escape(css_class)
     case icon_key.to_s
     when "clear-day"
       <<-SVG.html_safe

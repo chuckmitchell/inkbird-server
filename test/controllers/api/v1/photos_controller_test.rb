@@ -167,6 +167,19 @@ module Api
         assert_nil photo.next_photo_at
         assert_nil device.next_photo_at
       end
+
+      test "returns 422 when image_base64 exceeds maximum allowed size" do
+        oversized_base64 = "A" * (Api::V1::PhotosController::MAX_BASE64_BYTES + 10)
+
+        post api_v1_photos_url,
+          params: @valid_payload.merge(image_base64: oversized_base64),
+          headers: { "Authorization" => "Bearer #{VALID_TOKEN}" },
+          as: :json
+
+        assert_response :unprocessable_entity
+        body = JSON.parse(response.body)
+        assert_match(/exceeds maximum allowed size/, body["error"])
+      end
     end
   end
 end

@@ -58,4 +58,20 @@ class DevicePhotoTest < ActiveSupport::TestCase
     assert_not duplicate.valid?
     assert_includes duplicate.errors[:recorded_at], "has already been taken"
   end
+
+  test "rejects path traversal outside storage_root" do
+    device = Device.create!(tuya_device_id: "02720007bcddc234ce20")
+    photo = device.device_photos.new(
+      recorded_at: Time.utc(2026, 10, 29, 16, 15, 0),
+      lens: "REAR_WIDE",
+      file_path: "../../etc/passwd",
+      byte_size: 128
+    )
+
+    assert_not photo.safe_file_path?
+    assert_not photo.file_exists?
+    assert_raises(ArgumentError) do
+      photo.write_image_bytes!(SAMPLE_JPEG_BYTES)
+    end
+  end
 end

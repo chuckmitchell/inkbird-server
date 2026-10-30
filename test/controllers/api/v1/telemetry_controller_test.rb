@@ -179,6 +179,24 @@ module Api
         assert_nil reading.next_photo_at
         assert_nil device.next_photo_at
       end
+
+      test "sanitizes and bounds alarms and raw_dps json objects" do
+        many_keys = (1..80).to_h { |i| [ "dp_#{i}", "x" * 500 ] }
+        payload = @valid_payload.merge(
+          device_id: "dev-bounded-json",
+          raw_dps: many_keys
+        )
+
+        post api_v1_telemetry_url,
+          params: payload,
+          headers: { "Authorization" => "Bearer #{VALID_TOKEN}" },
+          as: :json
+
+        assert_response :created
+        reading = TelemetryReading.find(JSON.parse(response.body)["reading_id"])
+        assert_equal Api::V1::TelemetryController::MAX_JSON_KEYS, reading.raw_dps.size
+        assert_equal Api::V1::TelemetryController::MAX_JSON_STRING_BYTES, reading.raw_dps.values.first.bytesize
+      end
     end
   end
 end

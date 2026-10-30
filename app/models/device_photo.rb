@@ -15,7 +15,7 @@ class DevicePhoto < ApplicationRecord
 
   def self.storage_root
     if Rails.env.test?
-      Rails.root.join("tmp/storage/photos")
+      Rails.root.join("tmp/storage/photos_#{Process.pid}")
     else
       Rails.root.join("storage/photos")
     end
@@ -31,11 +31,24 @@ class DevicePhoto < ApplicationRecord
   end
 
   def absolute_file_path
-    self.class.storage_root.join(file_path)
+    self.class.storage_root.join(file_path.to_s).cleanpath
+  end
+
+  def safe_file_path?
+    return false if file_path.blank?
+
+    root_prefix = "#{self.class.storage_root.cleanpath}#{File::SEPARATOR}"
+    absolute_file_path.to_s.start_with?(root_prefix)
   end
 
   def file_exists?
-    file_path.present? && File.exist?(absolute_file_path)
+    safe_file_path? && File.file?(absolute_file_path)
+  end
+
+  def read_image_bytes
+    raise ArgumentError, "Unsafe photo file_path" unless file_exists?
+
+    File.binread(absolute_file_path)
   end
 
   def current_temp_f
@@ -44,6 +57,8 @@ class DevicePhoto < ApplicationRecord
   end
 
   def write_image_bytes!(bytes)
+    raise ArgumentError, "Unsafe photo file_path" unless safe_file_path?
+
     full_path = absolute_file_path
     FileUtils.mkdir_p(File.dirname(full_path))
     File.binwrite(full_path, bytes)

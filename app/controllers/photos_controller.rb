@@ -37,8 +37,10 @@ class PhotosController < ApplicationController
       return
     end
 
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'"
     expires_in 30.days, public: true
-    send_file photo.absolute_file_path,
+    send_data photo.read_image_bytes,
       type: "image/jpeg",
       disposition: "inline",
       filename: File.basename(photo.file_path)

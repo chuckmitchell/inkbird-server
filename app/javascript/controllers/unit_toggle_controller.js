@@ -31,7 +31,8 @@ export default class extends Controller {
     try {
       localStorage.setItem("inkbird_temp_unit", unit)
     } catch (_) {}
-    document.cookie = `inkbird_temp_unit=${unit}; path=/; max-age=31536000; SameSite=Lax`
+    const secureFlag = (typeof window !== "undefined" && window.location && window.location.protocol === "https:") ? "; Secure" : ""
+    document.cookie = `inkbird_temp_unit=${unit}; path=/; max-age=31536000; SameSite=Lax${secureFlag}`
 
     // Update toggle buttons in title bar
     this.buttonTargets.forEach(button => {

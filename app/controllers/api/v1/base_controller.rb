@@ -2,6 +2,9 @@ module Api
   module V1
     class BaseController < ActionController::API
       include ActionController::HttpAuthentication::Token::ControllerMethods
+      include ActionController::RateLimiting
+
+      rate_limit to: 60, within: 1.minute
 
       before_action :authenticate_ingest_token!
 

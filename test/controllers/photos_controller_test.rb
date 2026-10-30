@@ -30,6 +30,8 @@ class PhotosControllerTest < ActionDispatch::IntegrationTest
     get photo_url(photo)
     assert_response :success
     assert_equal "image/jpeg", response.media_type
+    assert_equal "nosniff", response.headers["X-Content-Type-Options"]
+    assert_includes response.headers["Content-Security-Policy"], "default-src 'none'"
     assert_equal SAMPLE_JPEG_BYTES, response.body.b
   end
 
