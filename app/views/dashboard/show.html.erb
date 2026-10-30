@@ -258,6 +258,8 @@
               <span class="font-medium text-sky-400 group-hover:underline">Open full image ↗</span>
             </div>
           <% end %>
+          <%= link_to "View all photos →", device_photos_path(@device),
+                class: "rounded-md bg-sky-500/10 px-2.5 py-1 font-medium text-sky-400 ring-1 ring-inset ring-sky-500/20 hover:bg-sky-500/20 transition" %>
         </div>
 
         <% if @recent_photos.any? %>
@@ -297,12 +299,40 @@
             </div>
           </div>
         <% end %>
-      <% else %>
-        <div class="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 bg-slate-950/40 p-6 text-center">
-          <p class="text-sm font-medium text-slate-300">No daytime photos uploaded yet.</p>
-          <p class="mt-1 text-xs text-slate-500">
-            Photos sent to <code class="rounded bg-slate-900 px-1.5 py-0.5 font-mono text-xs text-sky-300">POST /api/v1/photos</code> will appear here.
-          </p>
+      </div>
+
+      <% if @recent_photos.any? %>
+        <div class="mt-5">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Recent Captures</h3>
+            <%= link_to "View all captures →", device_photos_path(@device),
+                  class: "text-xs font-medium text-sky-400 hover:text-sky-300 hover:underline" %>
+          </div>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <% @recent_photos.each do |photo| %>
+              <%= link_to photo_path(photo), target: "_blank", rel: "noopener",
+                    class: "group overflow-hidden rounded-lg border border-slate-800 bg-slate-950 transition hover:border-sky-500/50" do %>
+                <img
+                  src="<%= photo_path(photo) %>"
+                  alt="Capture from <%= photo.recorded_at.utc.strftime('%Y-%m-%d %H:%M UTC') %>"
+                  width="<%= photo.width || 1280 %>"
+                  height="<%= photo.height || 960 %>"
+                  loading="lazy"
+                  decoding="async"
+                  class="aspect-4/3 w-full object-cover transition group-hover:scale-105"
+                >
+                <div class="p-2 font-mono text-[11px] leading-tight">
+                  <div class="truncate text-slate-200"><%= photo.recorded_at.utc.strftime("%b %d %H:%M") %></div>
+                  <div class="mt-0.5 flex items-center justify-between text-slate-400">
+                    <span><%= photo.lens %></span>
+                    <% if photo.current_temp_c.present? %>
+                      <span class="text-sky-300"><%= sprintf("%.1f°C", photo.current_temp_c) %></span>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
         </div>
       <% end %>
     </section>

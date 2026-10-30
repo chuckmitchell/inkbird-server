@@ -1,0 +1,38 @@
+<%= link_to photo_path(photo),
+            target: "_blank",
+            rel: "noopener",
+            class: "group overflow-hidden rounded-xl border border-slate-800 bg-slate-900/80 transition hover:border-sky-500/50 hover:bg-slate-900 shadow-sm flex flex-col" do %>
+  <div class="relative aspect-4/3 w-full overflow-hidden bg-slate-950">
+    <img
+      src="<%= photo_path(photo) %>"
+      alt="Photo captured on <%= photo.recorded_at.utc.strftime('%Y-%m-%d at %H:%M UTC') %>"
+      width="<%= photo.width || 1280 %>"
+      height="<%= photo.height || 960 %>"
+      loading="lazy"
+      decoding="async"
+      class="h-full w-full object-cover transition duration-200 group-hover:scale-105"
+    >
+  </div>
+
+  <div class="p-2.5 flex flex-col gap-1.5 text-xs">
+    <div class="flex items-center justify-between">
+      <span class="font-mono font-semibold text-slate-200">
+        <%= photo.recorded_at.utc.strftime("%H:%M UTC") %>
+      </span>
+      <% if photo.current_temp_c.present? %>
+        <span class="rounded bg-sky-500/15 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-sky-300 ring-1 ring-inset ring-sky-500/30">
+          <%= sprintf("%.1f°C", photo.current_temp_c) %>
+        </span>
+      <% end %>
+    </div>
+
+    <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+      <span class="rounded bg-slate-800/80 px-1.5 py-0.5 text-slate-300">
+        <%= photo.lens %>
+      </span>
+      <span class="text-slate-500 group-hover:text-sky-400 transition">
+        Full image ↗
+      </span>
+    </div>
+  </div>
+<% end %>
