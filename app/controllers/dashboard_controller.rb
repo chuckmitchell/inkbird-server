@@ -18,8 +18,8 @@ class DashboardController < ApplicationController
     @range_meta = VALID_RANGES[@range]
 
     if @device
-      window_start = @range_meta[:duration].ago
-      readings_in_window = @device.telemetry_readings.since(window_start)
+      @window_start = @range_meta[:duration].ago
+      readings_in_window = @device.telemetry_readings.since(@window_start)
 
       @chart_data_c = build_chart_data(readings_in_window, @range, :current_temp_c)
       @chart_data_f = build_chart_data(readings_in_window, @range, :current_temp_f)
@@ -76,12 +76,12 @@ class DashboardController < ApplicationController
 
   def build_chart_data(scope, range, column = :current_temp_c)
     grouped = case range
-    when "24h"
-      scope.group_by_minute(:recorded_at, n: 5, series: false).average(column)
     when "7d"
       scope.group_by_hour(:recorded_at, series: false).average(column)
     when "30d"
-      scope.group_by_hour(:recorded_at, n: 6, series: false).average(column)
+      scope.group_by_minute(:recorded_at, n: 360, series: false).average(column)
+    else
+      scope.group_by_minute(:recorded_at, n: 5, series: false).average(column)
     end
 
     grouped.transform_values { |val| val&.round(1) }

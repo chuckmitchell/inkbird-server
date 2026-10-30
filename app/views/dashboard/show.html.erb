@@ -277,7 +277,7 @@
           <% DashboardController::VALID_RANGES.each_key do |range_key| %>
             <% active = (@range == range_key) %>
             <%= link_to range_key,
-                  root_path(range: range_key, device_id: params[:device_id]),
+                  root_path(range: range_key, device_id: params[:device_id], unit: params[:unit].presence),
                   class: "rounded-lg px-3.5 py-1.5 text-xs font-semibold transition #{active ? 'bg-sky-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'}" %>
           <% end %>
         </div>
@@ -291,7 +291,9 @@
                 suffix: (@unit == "F" ? "°F" : "°C"),
                 colors: ["#38bdf8"],
                 curve: true,
-                points: false,
+                points: (@chart_data.size <= 1),
+                xmin: @window_start,
+                xmax: Time.current,
                 empty: "No temperature readings in this time window",
                 library: {
                   plugins: {
