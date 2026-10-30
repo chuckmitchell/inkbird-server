@@ -27,4 +27,14 @@ namespace :photos do
 
     puts "Archived #{archived_count} photo(s) older than #{days} days to #{archive_root}."
   end
+
+  desc "Remove all device photos and delete stored image files"
+  task clear: :environment do
+    count = DevicePhoto.count
+    DevicePhoto.find_each(&:destroy)
+    if Dir.exist?(DevicePhoto.storage_root)
+      FileUtils.rm_rf(Dir.glob(DevicePhoto.storage_root.join("*")))
+    end
+    puts "Cleared #{count} photo(s) and storage directory."
+  end
 end

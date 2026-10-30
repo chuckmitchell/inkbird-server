@@ -5,6 +5,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       post "telemetry", to: "telemetry#create"
       post "photos", to: "photos#create"
+      post "photo", to: "photos#create"
     end
   end
 

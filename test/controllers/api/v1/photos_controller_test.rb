@@ -86,6 +86,20 @@ module Api
         assert_equal photo.id, retry_body["photo_id"]
       end
 
+      test "accepts singular /api/v1/photo endpoint" do
+        assert_difference [ "Device.count", "DevicePhoto.count" ], 1 do
+          post "/api/v1/photo",
+            params: @valid_payload,
+            headers: { "Authorization" => "Bearer #{VALID_TOKEN}" },
+            as: :json
+        end
+
+        assert_response :created
+        body = JSON.parse(response.body)
+        assert_equal "ok", body["status"]
+        assert_not_nil body["photo_id"]
+      end
+
       test "returns 422 when required fields are missing or image_base64 is not a valid JPEG" do
         post api_v1_photos_url,
           params: @valid_payload.except(:device_id),
