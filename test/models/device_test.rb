@@ -9,11 +9,11 @@ class DeviceTest < ActiveSupport::TestCase
     assert_includes duplicate.errors[:tuya_device_id], "has already been taken"
   end
 
-  test "online? returns true when last_seen_at is within 5 minutes" do
+  test "online? returns true when last_seen_at is within threshold" do
     device = Device.new(tuya_device_id: "dev-1", last_seen_at: 2.minutes.ago)
     assert device.online?
 
-    device.last_seen_at = 6.minutes.ago
+    device.last_seen_at = (Device::ONLINE_THRESHOLD + 1.minute).ago
     assert_not device.online?
 
     device.last_seen_at = nil
