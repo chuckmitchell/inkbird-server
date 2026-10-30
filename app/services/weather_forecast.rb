@@ -85,6 +85,10 @@ class WeatherForecast
       ENV["WEATHER_TIMEZONE"].presence || DEFAULT_TIMEZONE
     end
 
+    def forecast_url
+      ENV["WEATHER_FORECAST_URL"].presence || "https://open-meteo.com/en/docs#latitude=#{latitude}&longitude=#{longitude}"
+    end
+
     def degrees_to_cardinal(deg)
       return nil unless deg
       idx = ((deg % 360) / 22.5).round % 16
@@ -148,6 +152,7 @@ class WeatherForecast
 
       {
         location_name: location_name,
+        forecast_url: forecast_url,
         fetched_at: Time.current.iso8601,
         is_day: is_day,
         weather_code: weather_code,

@@ -241,6 +241,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     fake_weather = {
       location_name: "Lunenburg, NS",
+      forecast_url: "https://open-meteo.com/en/docs#latitude=44.3769&longitude=-64.3188",
       fetched_at: Time.current.iso8601,
       is_day: true,
       condition_label: "Partly cloudy",
@@ -261,6 +262,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select "header span", text: /Lunenburg, NS/
+    assert_select "a[href='https://open-meteo.com/en/docs#latitude=44.3769&longitude=-64.3188'][target='_blank']"
     assert_select "div", text: /Partly cloudy/
     assert_select "div", text: /18 km\/h NW/
     assert_select "div", text: /H: 15\.0°C · L: 6\.2°C/

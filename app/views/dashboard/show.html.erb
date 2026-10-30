@@ -113,45 +113,91 @@
             </p>
           </div>
 
-          <!-- Local Outdoor Weather (Right) -->
           <% if @weather.present? %>
-            <div class="flex items-center gap-3 rounded-xl bg-slate-950/60 px-3.5 py-2 ring-1 ring-inset ring-slate-800/80">
-              <div title="<%= @weather[:condition_label] %>">
-                <%= weather_icon_svg(@weather[:icon_key], css_class: "w-11 h-11 shrink-0") %>
-              </div>
-              <div class="flex flex-col text-xs leading-tight">
-                <!-- Line 1: Outdoor Temp · Condition -->
-                <div class="font-medium text-slate-200">
-                  <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
-                    <%= @weather[:temp_c].present? ? sprintf("%.1f°C", @weather[:temp_c]) : "—" %>
-                  </span>
-                  <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
-                    <%= @weather[:temp_f].present? ? sprintf("%.1f°F", @weather[:temp_f]) : "—" %>
-                  </span>
-                  <span class="text-slate-400">·</span>
-                  <span class="text-slate-300"><%= @weather[:condition_label] %></span>
+            <% if @weather[:forecast_url].present? %>
+              <%= link_to @weather[:forecast_url],
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "group flex items-center gap-3 rounded-xl bg-slate-950/60 px-3.5 py-2 ring-1 ring-inset ring-slate-800/80 hover:ring-sky-500/50 hover:bg-slate-950/80 transition cursor-pointer",
+                    title: "View Open-Meteo forecast in new tab" do %>
+                <div title="<%= @weather[:condition_label] %>">
+                  <%= weather_icon_svg(@weather[:icon_key], css_class: "w-11 h-11 shrink-0") %>
                 </div>
+                <div class="flex flex-col text-xs leading-tight">
+                  <!-- Line 1: Outdoor Temp · Condition -->
+                  <div class="font-medium text-slate-200 group-hover:text-white flex items-center gap-1.5">
+                    <span>
+                      <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
+                        <%= @weather[:temp_c].present? ? sprintf("%.1f°C", @weather[:temp_c]) : "—" %>
+                      </span>
+                      <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
+                        <%= @weather[:temp_f].present? ? sprintf("%.1f°F", @weather[:temp_f]) : "—" %>
+                      </span>
+                    </span>
+                    <span class="text-slate-400">·</span>
+                    <span class="text-slate-300 group-hover:text-sky-300"><%= @weather[:condition_label] %></span>
+                    <span class="text-[10px] text-slate-400 group-hover:text-sky-400">↗</span>
+                  </div>
 
-                <!-- Line 2: High / Low -->
-                <div class="mt-1 font-mono text-[11px] text-slate-400">
-                  <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
-                    H: <%= @weather[:high_c].present? ? sprintf("%.1f°C", @weather[:high_c]) : "—" %> · L: <%= @weather[:low_c].present? ? sprintf("%.1f°C", @weather[:low_c]) : "—" %>
-                  </span>
-                  <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
-                    H: <%= @weather[:high_f].present? ? sprintf("%.1f°F", @weather[:high_f]) : "—" %> · L: <%= @weather[:low_f].present? ? sprintf("%.1f°F", @weather[:low_f]) : "—" %>
-                  </span>
-                </div>
+                  <!-- Line 2: High / Low -->
+                  <div class="mt-1 font-mono text-[11px] text-slate-400">
+                    <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
+                      H: <%= @weather[:high_c].present? ? sprintf("%.1f°C", @weather[:high_c]) : "—" %> · L: <%= @weather[:low_c].present? ? sprintf("%.1f°C", @weather[:low_c]) : "—" %>
+                    </span>
+                    <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
+                      H: <%= @weather[:high_f].present? ? sprintf("%.1f°F", @weather[:high_f]) : "—" %> · L: <%= @weather[:low_f].present? ? sprintf("%.1f°F", @weather[:low_f]) : "—" %>
+                    </span>
+                  </div>
 
-                <!-- Line 3: Wind -->
-                <div class="mt-0.5 font-mono text-[11px] text-slate-400">
-                  Wind: <%= @weather[:wind_speed_kmh].present? ? "#{@weather[:wind_speed_kmh]} km/h" : "—" %>
-                  <% if @weather[:wind_direction_cardinal].present? %>
-                    <%= @weather[:wind_direction_cardinal] %>
-                  <% end %>
+                  <!-- Line 3: Wind -->
+                  <div class="mt-0.5 font-mono text-[11px] text-slate-400">
+                    Wind: <%= @weather[:wind_speed_kmh].present? ? "#{@weather[:wind_speed_kmh]} km/h" : "—" %>
+                    <% if @weather[:wind_direction_cardinal].present? %>
+                      <%= @weather[:wind_direction_cardinal] %>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="flex items-center gap-3 rounded-xl bg-slate-950/60 px-3.5 py-2 ring-1 ring-inset ring-slate-800/80">
+                <div title="<%= @weather[:condition_label] %>">
+                  <%= weather_icon_svg(@weather[:icon_key], css_class: "w-11 h-11 shrink-0") %>
+                </div>
+                <div class="flex flex-col text-xs leading-tight">
+                  <!-- Line 1: Outdoor Temp · Condition -->
+                  <div class="font-medium text-slate-200">
+                    <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
+                      <%= @weather[:temp_c].present? ? sprintf("%.1f°C", @weather[:temp_c]) : "—" %>
+                    </span>
+                    <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
+                      <%= @weather[:temp_f].present? ? sprintf("%.1f°F", @weather[:temp_f]) : "—" %>
+                    </span>
+                    <span class="text-slate-400">·</span>
+                    <span class="text-slate-300"><%= @weather[:condition_label] %></span>
+                  </div>
+
+                  <!-- Line 2: High / Low -->
+                  <div class="mt-1 font-mono text-[11px] text-slate-400">
+                    <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
+                      H: <%= @weather[:high_c].present? ? sprintf("%.1f°C", @weather[:high_c]) : "—" %> · L: <%= @weather[:low_c].present? ? sprintf("%.1f°C", @weather[:low_c]) : "—" %>
+                    </span>
+                    <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
+                      H: <%= @weather[:high_f].present? ? sprintf("%.1f°F", @weather[:high_f]) : "—" %> · L: <%= @weather[:low_f].present? ? sprintf("%.1f°F", @weather[:low_f]) : "—" %>
+                    </span>
+                  </div>
+
+                  <!-- Line 3: Wind -->
+                  <div class="mt-0.5 font-mono text-[11px] text-slate-400">
+                    Wind: <%= @weather[:wind_speed_kmh].present? ? "#{@weather[:wind_speed_kmh]} km/h" : "—" %>
+                    <% if @weather[:wind_direction_cardinal].present? %>
+                      <%= @weather[:wind_direction_cardinal] %>
+                    <% end %>
+                  </div>
                 </div>
               </div>
-            </div>
+            <% end %>
           <% end %>
+
         </div>
 
         <footer class="border-t border-slate-800/80 pt-3 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2">
