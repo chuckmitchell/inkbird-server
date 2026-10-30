@@ -92,22 +92,80 @@
       <article class="status-card rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-sm">
         <header class="flex items-center justify-between">
           <h2 class="text-sm font-medium text-slate-400">Current Temperature</h2>
+          <% if @weather.present? %>
+            <span class="text-xs text-slate-400 flex items-center gap-1" title="Outdoor weather in <%= @weather[:location_name] %>">
+              <span class="inline-block h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+              <%= @weather[:location_name] %>
+            </span>
+          <% end %>
         </header>
-        <div class="flex items-baseline gap-3">
-          <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
-              <%= @device.last_temp_c.present? ? sprintf("%.1f°C", @device.last_temp_c) : "—" %>
-            </span>
-            <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
-              <%= @device.effective_last_temp_f.present? ? sprintf("%.1f°F", @device.effective_last_temp_f) : "—" %>
-            </span>
-          </p>
+
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <!-- Thermostat Reading (Left) -->
+          <div class="flex items-baseline gap-3">
+            <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
+                <%= @device.last_temp_c.present? ? sprintf("%.1f°C", @device.last_temp_c) : "—" %>
+              </span>
+              <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
+                <%= @device.effective_last_temp_f.present? ? sprintf("%.1f°F", @device.effective_last_temp_f) : "—" %>
+              </span>
+            </p>
+          </div>
+
+          <!-- Local Outdoor Weather (Right) -->
+          <% if @weather.present? %>
+            <div class="flex items-center gap-3 rounded-xl bg-slate-950/60 px-3.5 py-2 ring-1 ring-inset ring-slate-800/80">
+              <div title="<%= @weather[:condition_label] %>">
+                <%= weather_icon_svg(@weather[:icon_key], css_class: "w-11 h-11 shrink-0") %>
+              </div>
+              <div class="flex flex-col text-xs leading-tight">
+                <!-- Line 1: Outdoor Temp · Condition -->
+                <div class="font-medium text-slate-200">
+                  <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
+                    <%= @weather[:temp_c].present? ? sprintf("%.1f°C", @weather[:temp_c]) : "—" %>
+                  </span>
+                  <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
+                    <%= @weather[:temp_f].present? ? sprintf("%.1f°F", @weather[:temp_f]) : "—" %>
+                  </span>
+                  <span class="text-slate-400">·</span>
+                  <span class="text-slate-300"><%= @weather[:condition_label] %></span>
+                </div>
+
+                <!-- Line 2: High / Low -->
+                <div class="mt-1 font-mono text-[11px] text-slate-400">
+                  <span data-unit-toggle-target="celsius" class="<%= 'hidden' if @unit == 'F' %>">
+                    H: <%= @weather[:high_c].present? ? sprintf("%.1f°C", @weather[:high_c]) : "—" %> · L: <%= @weather[:low_c].present? ? sprintf("%.1f°C", @weather[:low_c]) : "—" %>
+                  </span>
+                  <span data-unit-toggle-target="fahrenheit" class="<%= 'hidden' if @unit != 'F' %>">
+                    H: <%= @weather[:high_f].present? ? sprintf("%.1f°F", @weather[:high_f]) : "—" %> · L: <%= @weather[:low_f].present? ? sprintf("%.1f°F", @weather[:low_f]) : "—" %>
+                  </span>
+                </div>
+
+                <!-- Line 3: Wind -->
+                <div class="mt-0.5 font-mono text-[11px] text-slate-400">
+                  Wind: <%= @weather[:wind_speed_kmh].present? ? "#{@weather[:wind_speed_kmh]} km/h" : "—" %>
+                  <% if @weather[:wind_direction_cardinal].present? %>
+                    <%= @weather[:wind_direction_cardinal] %>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
         </div>
-        <footer class="border-t border-slate-800/80 pt-3 text-xs text-slate-400">
-          <% if @device.last_seen_at %>
-            Updated <%= time_ago_in_words(@device.last_seen_at) %> ago
-          <% else %>
-            No temperature recorded yet
+
+        <footer class="border-t border-slate-800/80 pt-3 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <% if @device.last_seen_at %>
+              Thermostat: updated <%= time_ago_in_words(@device.last_seen_at) %> ago
+            <% else %>
+              No temperature recorded yet
+            <% end %>
+          </div>
+          <% if @weather&.dig(:fetched_at).present? %>
+            <div class="text-[11px] text-slate-400" title="<%= friendly_timestamp(Time.parse(@weather[:fetched_at])) rescue nil %>">
+              Weather: <%= time_ago_in_words(Time.parse(@weather[:fetched_at])) rescue "recently" %> ago
+            </div>
           <% end %>
         </footer>
       </article>

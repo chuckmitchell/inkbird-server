@@ -227,4 +227,42 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /Next capture expected 40 minutes overdue/
     assert_select "span", text: "Overdue"
   end
+
+  test "displays outdoor weather snapshot when available" do
+    device = Device.create!(tuya_device_id: "02720007bcddc234ce20", name: "Cottage ITC-308")
+    reading = device.telemetry_readings.create!(
+      recorded_at: 1.minute.ago,
+      unit: "C",
+      current_temp_c: 21.0,
+      current_temp_f: 69.8,
+      relay_state: "idle"
+    )
+    device.refresh_cached_state!(reading)
+
+    fake_weather = {
+      location_name: "Lunenburg, NS",
+      fetched_at: Time.current.iso8601,
+      is_day: true,
+      condition_label: "Partly cloudy",
+      icon_key: "partly-cloudy-day",
+      temp_c: 12.4,
+      temp_f: 54.3,
+      high_c: 15.0,
+      high_f: 59.0,
+      low_c: 6.2,
+      low_f: 43.2,
+      wind_speed_kmh: 18,
+      wind_direction_cardinal: "NW"
+    }.with_indifferent_access
+
+    Rails.cache.write(WeatherForecast::CACHE_KEY, fake_weather)
+
+    get root_url
+    assert_response :success
+
+    assert_select "header span", text: /Lunenburg, NS/
+    assert_select "div", text: /Partly cloudy/
+    assert_select "div", text: /18 km\/h NW/
+    assert_select "div", text: /H: 15\.0°C · L: 6\.2°C/
+  end
 end

@@ -41,7 +41,10 @@ class DashboardController < ApplicationController
       max_f = readings_in_window.maximum(:current_temp_f)&.round(1) || (max_c ? ((max_c * 9.0 / 5.0) + 32.0).round(1) : nil)
       avg_f = readings_in_window.average(:current_temp_f)&.round(1) || (avg_c ? ((avg_c * 9.0 / 5.0) + 32.0).round(1) : nil)
 
+      @weather = WeatherForecast.current
+
       @stats = {
+
         min_c: min_c,
         max_c: max_c,
         avg_c: avg_c,
@@ -58,9 +61,11 @@ class DashboardController < ApplicationController
       @recent_readings = []
       @latest_photo = nil
       @recent_photos = []
+      @weather = WeatherForecast.current
       @stats = { min_c: nil, max_c: nil, avg_c: nil, min_f: nil, max_f: nil, avg_f: nil, count: 0 }
     end
   end
+
 
   private
 
