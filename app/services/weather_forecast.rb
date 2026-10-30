@@ -91,7 +91,7 @@ class WeatherForecast
     end
 
     def forecast_url
-      ENV["WEATHER_FORECAST_URL"].presence || "https://open-meteo.com/en/docs#latitude=#{latitude}&longitude=#{longitude}"
+      ENV["WEATHER_FORECAST_URL"].presence || "https://weather.gc.ca/en/location/index.html?coords=#{latitude},#{longitude}"
     end
 
     def degrees_to_cardinal(deg)
