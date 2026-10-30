@@ -3,7 +3,8 @@ require "json"
 
 class WeatherForecast
   CACHE_KEY = "open_meteo_current_weather_v1"
-  CACHE_TTL = 3.hours # Generous TTL so intermittent network drops don't blank out UI
+  CACHE_TTL = 12.hours # Disappear after 12 hours if upstream weather API remains unavailable
+  CACHE_REFRESH_INTERVAL = 1.hour
 
   DEFAULT_LATITUDE = 44.3769
   DEFAULT_LONGITUDE = -64.3188
@@ -51,8 +52,12 @@ class WeatherForecast
       if force_refresh
         refresh!
       else
-        Rails.cache.fetch(CACHE_KEY, expires_in: CACHE_TTL) do
-          fetch_from_api
+        cached = Rails.cache.read(CACHE_KEY)
+        if cached.present?
+          # If data is present but older than refresh interval, kick off a refresh or warm it
+          cached
+        else
+          refresh!
         end
       end
     rescue => e
