@@ -1,5 +1,5 @@
 class Device < ApplicationRecord
-  ONLINE_THRESHOLD = 5.minutes
+  ONLINE_THRESHOLD = 130.minutes
 
   has_many :telemetry_readings, dependent: :destroy
   has_many :device_photos, dependent: :destroy
