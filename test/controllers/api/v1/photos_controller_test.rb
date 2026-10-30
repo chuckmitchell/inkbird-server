@@ -118,6 +118,54 @@ module Api
           headers: { "Authorization" => "Bearer #{VALID_TOKEN}" },
           as: :json
         assert_response :unprocessable_entity
+
+        post api_v1_photos_url,
+          params: @valid_payload.merge(next_photo_utc: "invalid-iso-timestamp"),
+          headers: { "Authorization" => "Bearer #{VALID_TOKEN}" },
+          as: :json
+        assert_response :unprocessable_entity
+        body = JSON.parse(response.body)
+        assert_equal "next_photo_utc must be a valid ISO-8601 timestamp", body["error"]
+      end
+
+      test "persists next_photo_utc when provided" do
+        payload = @valid_payload.merge(
+          device_id: "dev-photo-next-1",
+          next_photo_utc: "2026-10-30T19:56:28Z"
+        )
+
+        assert_difference [ "Device.count", "DevicePhoto.count" ], 1 do
+          post api_v1_photos_url,
+            params: payload,
+            headers: { "Authorization" => "Bearer #{VALID_TOKEN}" },
+            as: :json
+        end
+
+        assert_response :created
+        body = JSON.parse(response.body)
+        photo = DevicePhoto.find(body["photo_id"])
+        device = Device.find_by!(tuya_device_id: "dev-photo-next-1")
+
+        assert_equal Time.utc(2026, 10, 30, 19, 56, 28), photo.next_photo_at
+        assert_equal Time.utc(2026, 10, 30, 19, 56, 28), device.next_photo_at
+      end
+
+      test "handles photo upload without next_photo_utc cleanly for backwards compatibility" do
+        payload = @valid_payload.merge(device_id: "dev-photo-legacy-1")
+        assert_not payload.key?(:next_photo_utc)
+
+        post api_v1_photos_url,
+          params: payload,
+          headers: { "Authorization" => "Bearer #{VALID_TOKEN}" },
+          as: :json
+
+        assert_response :created
+        body = JSON.parse(response.body)
+        photo = DevicePhoto.find(body["photo_id"])
+        device = Device.find_by!(tuya_device_id: "dev-photo-legacy-1")
+
+        assert_nil photo.next_photo_at
+        assert_nil device.next_photo_at
       end
     end
   end

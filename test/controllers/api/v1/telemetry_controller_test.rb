@@ -124,12 +124,21 @@ module Api
         assert_response :unprocessable_entity
         body = JSON.parse(response.body)
         assert_equal "next_poll_utc must be a valid ISO-8601 timestamp", body["error"]
+
+        post api_v1_telemetry_url,
+          params: @valid_payload.merge(next_photo_utc: "invalid-iso-timestamp"),
+          headers: { "Authorization" => "Bearer #{VALID_TOKEN}" },
+          as: :json
+        assert_response :unprocessable_entity
+        body = JSON.parse(response.body)
+        assert_equal "next_photo_utc must be a valid ISO-8601 timestamp", body["error"]
       end
 
-      test "persists next_poll_utc when provided" do
+      test "persists next_poll_utc and next_photo_utc when provided" do
         payload = @valid_payload.merge(
           device_id: "dev-next-poll-1",
-          next_poll_utc: "2026-10-30T17:15:00Z"
+          next_poll_utc: "2026-10-30T17:15:00Z",
+          next_photo_utc: "2026-10-30T18:15:00Z"
         )
 
         assert_difference [ "Device.count", "TelemetryReading.count" ], 1 do
@@ -146,11 +155,14 @@ module Api
 
         assert_equal Time.utc(2026, 10, 30, 17, 15, 0), reading.next_poll_at
         assert_equal Time.utc(2026, 10, 30, 17, 15, 0), device.next_poll_at
+        assert_equal Time.utc(2026, 10, 30, 18, 15, 0), reading.next_photo_at
+        assert_equal Time.utc(2026, 10, 30, 18, 15, 0), device.next_photo_at
       end
 
-      test "handles payload without next_poll_utc cleanly for backwards compatibility" do
+      test "handles payload without next_poll_utc and next_photo_utc cleanly for backwards compatibility" do
         payload = @valid_payload.merge(device_id: "dev-legacy-1")
         assert_not payload.key?(:next_poll_utc)
+        assert_not payload.key?(:next_photo_utc)
 
         post api_v1_telemetry_url,
           params: payload,
@@ -164,6 +176,8 @@ module Api
 
         assert_nil reading.next_poll_at
         assert_nil device.next_poll_at
+        assert_nil reading.next_photo_at
+        assert_nil device.next_photo_at
       end
     end
   end

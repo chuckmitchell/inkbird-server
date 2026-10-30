@@ -25,6 +25,15 @@ module Api
           return render json: { error: "image_base64 must be a valid Base64-encoded JPEG image" }, status: :unprocessable_entity
         end
 
+        next_photo_at = nil
+        if params[:next_photo_utc].present?
+          begin
+            next_photo_at = Time.iso8601(params[:next_photo_utc].to_s.strip).utc
+          rescue ArgumentError
+            return render json: { error: "next_photo_utc must be a valid ISO-8601 timestamp" }, status: :unprocessable_entity
+          end
+        end
+
         lens = params[:lens].to_s.strip.presence || "REAR_WIDE"
         device = Device.find_or_create_by!(tuya_device_id: device_id)
         photo = device.device_photos.find_or_initialize_by(recorded_at: recorded_at, lens: lens)
@@ -37,6 +46,7 @@ module Api
         )
 
         photo.assign_attributes(
+          next_photo_at: next_photo_at,
           width: params[:width].presence&.to_i,
           height: params[:height].presence&.to_i,
           current_temp_c: params[:current_temp_c].presence&.to_f,
@@ -46,7 +56,7 @@ module Api
         ActiveRecord::Base.transaction do
           photo.write_image_bytes!(image_bytes)
           photo.save!
-          device.record_photo_seen!(recorded_at, current_temp_c: photo.current_temp_c)
+          device.record_photo_seen!(recorded_at, current_temp_c: photo.current_temp_c, next_photo_at: photo.next_photo_at)
         end
 
         render json: { status: "ok", photo_id: photo.id }, status: (newly_created ? :created : :ok)

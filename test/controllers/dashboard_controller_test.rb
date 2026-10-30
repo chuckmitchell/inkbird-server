@@ -198,4 +198,33 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "p time[title=?]", ApplicationHelper.friendly_timestamp(recorded_time)
     assert_select "p time[title=?]", ApplicationHelper.friendly_timestamp(next_poll_time)
   end
+
+  test "renders next expected photo capture time and overdue badge when appropriate" do
+    device = Device.create!(
+      tuya_device_id: "02720007bcddc234ce20",
+      name: "Cottage ITC-308",
+      next_photo_at: 45.minutes.from_now
+    )
+    photo = device.device_photos.create!(
+      recorded_at: 10.minutes.ago,
+      lens: "REAR_WIDE",
+      width: 1280,
+      height: 960,
+      current_temp_c: 21.0,
+      file_path: "02720007bcddc234ce20/2026-10-30/photo.jpg",
+      byte_size: 1024
+    )
+
+    get root_url
+    assert_response :success
+    assert_select "p", text: /Next capture expected in 45 minutes/
+    assert_select "span", text: "Overdue", count: 0
+
+    # Overdue camera: past grace period
+    device.update!(next_photo_at: 40.minutes.ago)
+    get root_url
+    assert_response :success
+    assert_select "p", text: /Next capture expected 40 minutes overdue/
+    assert_select "span", text: "Overdue"
+  end
 end

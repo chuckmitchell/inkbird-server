@@ -75,4 +75,50 @@ class DeviceTest < ActiveSupport::TestCase
     assert_in_delta 22.5, device.last_temp_c, 0.01
     assert_equal "cooling", device.last_relay_state
   end
+
+  test "camera_stale? considers next_photo_at with grace period" do
+    device = Device.new(tuya_device_id: "dev-camera")
+    assert_not device.camera_stale?
+
+    # Future scheduled capture: not stale
+    device.next_photo_at = 30.minutes.from_now
+    assert_not device.camera_stale?
+
+    # Within grace period (e.g. 10 minutes overdue, grace period is 30 mins): not stale
+    device.next_photo_at = 10.minutes.ago
+    assert_not device.camera_stale?
+
+    # Past grace period (e.g. 45 minutes overdue): stale
+    device.next_photo_at = 45.minutes.ago
+    assert device.camera_stale?
+  end
+
+  test "record_photo_seen! updates last_seen_at and next_photo_at" do
+    device = Device.create!(tuya_device_id: "dev-record-photo")
+    recorded_at = Time.utc(2026, 10, 30, 16, 0, 0)
+    next_photo_at = Time.utc(2026, 10, 30, 19, 0, 0)
+
+    device.record_photo_seen!(recorded_at, current_temp_c: 23.5, next_photo_at: next_photo_at)
+
+    assert_equal recorded_at, device.last_seen_at
+    assert_in_delta 23.5, device.last_temp_c, 0.01
+    assert_equal next_photo_at, device.next_photo_at
+  end
+
+  test "refresh_cached_state! updates next_photo_at when provided on reading" do
+    device = Device.create!(tuya_device_id: "dev-refresh-photo")
+    recorded_at = Time.utc(2026, 10, 30, 16, 0, 0)
+    next_photo_at = Time.utc(2026, 10, 30, 19, 0, 0)
+
+    reading = device.telemetry_readings.create!(
+      recorded_at: recorded_at,
+      next_photo_at: next_photo_at,
+      unit: "C",
+      current_temp_c: 21.0,
+      relay_state: "cooling"
+    )
+    device.refresh_cached_state!(reading)
+
+    assert_equal next_photo_at, device.next_photo_at
+  end
 end

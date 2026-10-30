@@ -1,6 +1,7 @@
 class Device < ApplicationRecord
   ONLINE_THRESHOLD = 130.minutes
   POLL_GRACE_PERIOD = 15.minutes
+  PHOTO_GRACE_PERIOD = 30.minutes
 
   has_many :telemetry_readings, dependent: :destroy
   has_many :device_photos, dependent: :destroy
@@ -21,6 +22,12 @@ class Device < ApplicationRecord
     end
   end
 
+  def camera_stale?
+    return false if next_photo_at.blank?
+
+    Time.current > next_photo_at + PHOTO_GRACE_PERIOD
+  end
+
   def effective_last_temp_f
     last_temp_f.presence || (last_temp_c.present? ? ((last_temp_c * 9.0 / 5.0) + 32.0).round(1) : nil)
   end
@@ -37,17 +44,21 @@ class Device < ApplicationRecord
         last_relay_state: reading.relay_state
       }
       attrs[:next_poll_at] = reading.next_poll_at if reading.respond_to?(:next_poll_at)
+      attrs[:next_photo_at] = reading.next_photo_at if reading.respond_to?(:next_photo_at) && reading.next_photo_at.present?
       update!(attrs)
     else
       update!(last_seen_at: new_last_seen_at)
     end
   end
 
-  def record_photo_seen!(recorded_at, current_temp_c: nil)
+  def record_photo_seen!(recorded_at, current_temp_c: nil, next_photo_at: nil)
     new_last_seen_at = [ last_seen_at, recorded_at ].compact.max
     attrs = { last_seen_at: new_last_seen_at }
     if current_temp_c.present? && (last_seen_at.nil? || recorded_at >= last_seen_at)
       attrs[:last_temp_c] = current_temp_c
+    end
+    if next_photo_at.present?
+      attrs[:next_photo_at] = next_photo_at
     end
     update!(attrs)
   end

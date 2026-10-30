@@ -24,12 +24,22 @@ module Api
           end
         end
 
+        next_photo_at = nil
+        if params[:next_photo_utc].present?
+          begin
+            next_photo_at = Time.iso8601(params[:next_photo_utc].to_s.strip).utc
+          rescue ArgumentError
+            return render json: { error: "next_photo_utc must be a valid ISO-8601 timestamp" }, status: :unprocessable_entity
+          end
+        end
+
         device = Device.find_or_create_by!(tuya_device_id: device_id)
         reading = device.telemetry_readings.find_or_initialize_by(recorded_at: recorded_at)
         newly_created = reading.new_record?
 
         reading.assign_attributes(
           next_poll_at: next_poll_at,
+          next_photo_at: next_photo_at,
           unit: params[:unit].presence || "C",
           current_temp_c: params[:current_temp_c],
           current_temp_f: params[:current_temp_f],

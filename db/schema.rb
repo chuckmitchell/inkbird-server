@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_30_160625) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_30_171031) do
   create_table "device_photos", force: :cascade do |t|
     t.integer "device_id", null: false
     t.datetime "recorded_at", null: false
@@ -22,6 +22,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_160625) do
     t.integer "byte_size", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "next_photo_at"
     t.index ["device_id", "recorded_at", "lens"], name: "index_device_photos_on_device_recorded_at_and_lens", unique: true
     t.index ["device_id"], name: "index_device_photos_on_device_id"
     t.index ["recorded_at"], name: "index_device_photos_on_recorded_at"
@@ -38,7 +39,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_160625) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "next_poll_at"
+    t.datetime "next_photo_at"
     t.index ["last_seen_at"], name: "index_devices_on_last_seen_at"
+    t.index ["next_photo_at"], name: "index_devices_on_next_photo_at"
     t.index ["next_poll_at"], name: "index_devices_on_next_poll_at"
     t.index ["tuya_device_id"], name: "index_devices_on_tuya_device_id", unique: true
   end
@@ -59,6 +62,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_160625) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "next_poll_at"
+    t.datetime "next_photo_at"
     t.index ["device_id", "recorded_at"], name: "index_telemetry_readings_on_device_id_and_recorded_at", unique: true
     t.index ["device_id"], name: "index_telemetry_readings_on_device_id"
     t.index ["recorded_at"], name: "index_telemetry_readings_on_recorded_at"
