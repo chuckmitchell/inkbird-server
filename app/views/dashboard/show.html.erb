@@ -80,41 +80,6 @@
       </footer>
     </article>
 
-    <article class="status-card rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-sm">
-      <header class="flex items-center justify-between">
-        <h2 class="text-sm font-medium text-slate-400">Relay &amp; Alarm Status</h2>
-        <% relay = (@device.last_relay_state || "unknown").downcase %>
-        <% relay_badge_classes = case relay
-             when "cooling" then "bg-cyan-500/15 text-cyan-300 ring-cyan-500/30"
-             when "heating" then "bg-rose-500/15 text-rose-300 ring-rose-500/30"
-             when "idle"    then "bg-slate-800 text-slate-300 ring-slate-700"
-             else "bg-slate-800 text-slate-400 ring-slate-700"
-           end %>
-        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ring-1 ring-inset <%= relay_badge_classes %>">
-          <%= relay %>
-        </span>
-      </header>
-      <div>
-        <% active_alarms = @latest_reading&.active_alarms || [] %>
-        <% if active_alarms.any? %>
-          <ul class="space-y-1 text-sm font-semibold text-rose-400">
-            <% active_alarms.each do |alarm_name| %>
-              <li>⚠️ <%= alarm_name %></li>
-            <% end %>
-          </ul>
-        <% else %>
-          <p class="text-2xl font-semibold text-emerald-400">All Normal</p>
-          <p class="mt-1 text-xs text-slate-400">No high/low/sensor alarms triggered</p>
-        <% end %>
-      </div>
-      <footer class="border-t border-slate-800/80 pt-3 text-xs text-slate-400">
-        <% if @latest_reading %>
-          Limits: Low <%= @latest_reading.low_alarm_limit || "—" %>°C · High <%= @latest_reading.high_alarm_limit || "—" %>°C · Delay <%= @latest_reading.compressor_delay_min || "—" %>m
-        <% else %>
-          Alarm limits unavailable
-        <% end %>
-      </footer>
-    </article>
 
     <article class="status-card rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-sm">
       <header class="flex items-center justify-between">
