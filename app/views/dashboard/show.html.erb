@@ -37,7 +37,7 @@
           Device ID: <code class="rounded bg-slate-900 px-1.5 py-0.5 font-mono text-xs text-slate-300"><%= @device.tuya_device_id %></code>
           <% if @device.last_seen_at %>
             · Last seen <time datetime="<%= @device.last_seen_at.iso8601 %>" class="font-medium text-slate-200"><%= time_ago_in_words(@device.last_seen_at) %> ago</time>
-            (<%= @device.last_seen_at.utc.strftime("%Y-%m-%d %H:%M:%S UTC") %>)
+            (<%= friendly_timestamp(@device.last_seen_at) %>)
           <% end %>
         <% else %>
           Inkbird ITC-308 Wi-Fi Smart Thermostat Telemetry Server
@@ -246,7 +246,7 @@
           <%= link_to photo_path(@latest_photo), target: "_blank", rel: "noopener", class: "group relative block" do %>
             <img
               src="<%= photo_path(@latest_photo) %>"
-              alt="Cottage photo captured at <%= @latest_photo.recorded_at.utc.strftime('%Y-%m-%d %H:%M:%S UTC') %>"
+              alt="Cottage photo captured at <%= friendly_timestamp(@latest_photo.recorded_at) %>"
               width="<%= @latest_photo.width || 1280 %>"
               height="<%= @latest_photo.height || 960 %>"
               decoding="async"
@@ -255,7 +255,7 @@
             <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800/80 bg-slate-900/90 px-4 py-3 text-xs text-slate-300">
               <div>
                 Captured <time datetime="<%= @latest_photo.recorded_at.iso8601 %>" class="font-semibold text-white"><%= time_ago_in_words(@latest_photo.recorded_at) %> ago</time>
-                <span class="text-slate-400">(<%= @latest_photo.recorded_at.utc.strftime("%Y-%m-%d %H:%M:%S UTC") %>)</span>
+                <span class="text-slate-400">(<%= friendly_timestamp(@latest_photo.recorded_at) %>)</span>
               </div>
               <span class="font-medium text-sky-400 group-hover:underline">Open full image ↗</span>
             </div>
@@ -275,7 +275,7 @@
                       class: "group overflow-hidden rounded-lg border border-slate-800 bg-slate-950 transition hover:border-sky-500/50" do %>
                   <img
                     src="<%= photo_path(photo) %>"
-                    alt="Capture from <%= photo.recorded_at.utc.strftime('%Y-%m-%d %H:%M UTC') %>"
+                    alt="Capture from <%= friendly_timestamp(photo.recorded_at) %>"
                     width="<%= photo.width || 1280 %>"
                     height="<%= photo.height || 960 %>"
                     loading="lazy"
@@ -283,7 +283,7 @@
                     class="aspect-4/3 w-full object-cover transition group-hover:scale-105"
                   >
                   <div class="p-2 font-mono text-[11px] leading-tight">
-                    <div class="truncate text-slate-200"><%= photo.recorded_at.utc.strftime("%b %d %H:%M") %></div>
+                    <div class="truncate text-slate-200" title="<%= friendly_timestamp(photo.recorded_at) %>"><%= friendly_timestamp_short(photo.recorded_at) %></div>
                     <div class="mt-0.5 flex items-center justify-between text-slate-400">
                       <span><%= photo.lens %></span>
                       <% if photo.current_temp_c.present? %>
@@ -320,7 +320,7 @@
           <table class="w-full text-left text-sm">
             <thead class="border-b border-slate-800 text-xs uppercase tracking-wider text-slate-400">
               <tr>
-                <th scope="col" class="pb-3 pr-4">Timestamp (UTC)</th>
+                <th scope="col" class="pb-3 pr-4">Timestamp</th>
                 <th scope="col" class="pb-3 px-4">Temp (°C)</th>
                 <th scope="col" class="pb-3 pl-4">Temp (°F)</th>
               </tr>
@@ -328,7 +328,7 @@
             <tbody class="divide-y divide-slate-800/60 font-mono text-xs">
               <% @recent_readings.each do |reading| %>
                 <tr class="hover:bg-slate-800/30">
-                  <td class="py-2.5 pr-4 text-slate-300"><%= reading.recorded_at.utc.strftime("%Y-%m-%d %H:%M:%S UTC") %></td>
+                  <td class="py-2.5 pr-4 text-slate-300"><%= friendly_timestamp(reading.recorded_at) %></td>
                   <td class="py-2.5 px-4 font-semibold text-white"><%= reading.current_temp_c.present? ? sprintf("%.1f°C", reading.current_temp_c) : "—" %></td>
                   <td class="py-2.5 pl-4 text-slate-400"><%= reading.current_temp_f.present? ? sprintf("%.1f°F", reading.current_temp_f) : "—" %></td>
                 </tr>

@@ -38,7 +38,7 @@ class PhotosControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "index lists previous photos grouped by date with 24h time and temperature" do
+  test "index lists previous photos grouped by date with Atlantic time and temperature" do
     device = Device.create!(tuya_device_id: "02720007bcddc234ce20", name: "Cottage ITC-308", last_seen_at: Time.current)
     t_today = Time.current.utc.change(hour: 14, min: 30)
     t_yesterday = 1.day.ago.utc.change(hour: 9, min: 15)
@@ -59,9 +59,9 @@ class PhotosControllerTest < ActionDispatch::IntegrationTest
 
     # Photo cards details
     assert_select "a[target='_blank'][href=?]", photo_path(photo1)
-    assert_select "span", text: t_today.strftime("%H:%M UTC")
+    assert_select "span", text: ApplicationHelper.friendly_timestamp_short(t_today)
     assert_select "span", text: "22.4°C"
-    assert_select "span", text: t_yesterday.strftime("%H:%M UTC")
+    assert_select "span", text: ApplicationHelper.friendly_timestamp_short(t_yesterday)
     assert_select "span", text: "18.1°C"
   end
 

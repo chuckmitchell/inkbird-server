@@ -128,4 +128,51 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "th", text: "Temp (°C)"
     assert_select "th", text: "Temp (°F)"
   end
+
+  test "renders friendly timestamps in Atlantic time locked to when recorded" do
+    device = Device.create!(tuya_device_id: "02720007bcddc234ce20", name: "Cottage ITC-308")
+    recorded_time = Time.utc(2026, 10, 30, 14, 50, 0) # 11:50am ADT
+    reading = device.telemetry_readings.create!(
+      recorded_at: recorded_time,
+      unit: "C",
+      current_temp_c: 21.0,
+      current_temp_f: 69.8,
+      relay_state: "idle"
+    )
+    device.refresh_cached_state!(reading)
+
+    photo1 = device.device_photos.create!(
+      recorded_at: recorded_time,
+      lens: "REAR_WIDE",
+      width: 1280,
+      height: 960,
+      current_temp_c: 21.0,
+      file_path: "02720007bcddc234ce20/2026-10-30/photo1.jpg",
+      byte_size: 1024
+    )
+
+    photo2 = device.device_photos.create!(
+      recorded_at: recorded_time - 10.minutes,
+      lens: "REAR_WIDE",
+      width: 1280,
+      height: 960,
+      current_temp_c: 20.8,
+      file_path: "02720007bcddc234ce20/2026-10-30/photo2.jpg",
+      byte_size: 1024
+    )
+
+    get root_url
+    assert_response :success
+
+    # Header and reading table use friendly full format with ADT
+    assert_select "p", text: /Friday October 30, 2026 - 11:50am \(ADT\)/
+    assert_select "td", text: "Friday October 30, 2026 - 11:50am (ADT)"
+
+    # Table header is "Timestamp" instead of "Timestamp (UTC)"
+    assert_select "th", text: "Timestamp"
+    assert_select "th", text: /UTC/, count: 0
+
+    # Recent capture thumbnail uses compact format for small spaces
+    assert_select "div", text: "Fri, Oct 30, 2026 - 11:40am"
+  end
 end

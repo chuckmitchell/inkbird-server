@@ -5,7 +5,7 @@
   <div class="relative aspect-4/3 w-full overflow-hidden bg-slate-950">
     <img
       src="<%= photo_path(photo) %>"
-      alt="Photo captured on <%= photo.recorded_at.utc.strftime('%Y-%m-%d at %H:%M UTC') %>"
+      alt="Photo captured on <%= friendly_timestamp(photo.recorded_at) %>"
       width="<%= photo.width || 1280 %>"
       height="<%= photo.height || 960 %>"
       loading="lazy"
@@ -15,9 +15,9 @@
   </div>
 
   <div class="p-2.5 flex flex-col gap-1.5 text-xs">
-    <div class="flex items-center justify-between">
-      <span class="font-mono font-semibold text-slate-200">
-        <%= photo.recorded_at.utc.strftime("%H:%M UTC") %>
+    <div class="flex items-center justify-between gap-1">
+      <span class="font-mono font-semibold text-slate-200 truncate" title="<%= friendly_timestamp(photo.recorded_at) %>">
+        <%= friendly_timestamp_short(photo.recorded_at) %>
       </span>
       <% if photo.current_temp_c.present? %>
         <span class="rounded bg-sky-500/15 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-sky-300 ring-1 ring-inset ring-sky-500/30">
