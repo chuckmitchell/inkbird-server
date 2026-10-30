@@ -39,4 +39,34 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h2", text: /Last 7 Days Summary/
   end
+
+  test "renders latest photo and recent captures on the dashboard" do
+    device = Device.create!(tuya_device_id: "02720007bcddc234ce20", name: "Cottage ITC-308")
+
+    photo1 = device.device_photos.create!(
+      recorded_at: 2.hours.ago,
+      lens: "REAR_WIDE",
+      width: 1280,
+      height: 960,
+      current_temp_c: 24.5,
+      file_path: "02720007bcddc234ce20/2026-10-29/photo1.jpg",
+      byte_size: 1024
+    )
+    photo2 = device.device_photos.create!(
+      recorded_at: 1.hour.ago,
+      lens: "REAR_WIDE",
+      width: 1280,
+      height: 960,
+      current_temp_c: 29.0,
+      file_path: "02720007bcddc234ce20/2026-10-29/photo2.jpg",
+      byte_size: 1024
+    )
+
+    get root_url
+    assert_response :success
+    assert_select "h2", text: "Latest Cottage Photo"
+    assert_select "img[src='#{photo_path(photo2)}']"
+    assert_select "img[src='#{photo_path(photo1)}']"
+    assert_select "span", text: "29.0°C"
+  end
 end

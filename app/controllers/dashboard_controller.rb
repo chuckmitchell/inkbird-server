@@ -23,6 +23,8 @@ class DashboardController < ApplicationController
       @chart_data = build_chart_data(readings_in_window, @range)
       @latest_reading = @device.telemetry_readings.recent_first.first
       @recent_readings = @device.telemetry_readings.recent_first.limit(12)
+      @latest_photo = @device.device_photos.recent_first.first
+      @recent_photos = @device.device_photos.recent_first.offset(1).limit(6)
 
       @stats = {
         min_c: readings_in_window.minimum(:current_temp_c)&.round(1),
@@ -34,6 +36,8 @@ class DashboardController < ApplicationController
       @chart_data = {}
       @latest_reading = nil
       @recent_readings = []
+      @latest_photo = nil
+      @recent_photos = []
       @stats = { min_c: nil, max_c: nil, avg_c: nil, count: 0 }
     end
   end

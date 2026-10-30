@@ -2,6 +2,7 @@ class Device < ApplicationRecord
   ONLINE_THRESHOLD = 5.minutes
 
   has_many :telemetry_readings, dependent: :destroy
+  has_many :device_photos, dependent: :destroy
 
   validates :tuya_device_id, presence: true, uniqueness: true
 
@@ -23,5 +24,14 @@ class Device < ApplicationRecord
     else
       update!(last_seen_at: new_last_seen_at)
     end
+  end
+
+  def record_photo_seen!(recorded_at, current_temp_c: nil)
+    new_last_seen_at = [ last_seen_at, recorded_at ].compact.max
+    attrs = { last_seen_at: new_last_seen_at }
+    if current_temp_c.present? && (last_seen_at.nil? || recorded_at >= last_seen_at)
+      attrs[:last_temp_c] = current_temp_c
+    end
+    update!(attrs)
   end
 end
