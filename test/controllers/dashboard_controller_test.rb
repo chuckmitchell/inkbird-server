@@ -90,6 +90,9 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[data-unit='C'][aria-pressed='true']", text: "°C"
     assert_select "button[data-unit='F'][aria-pressed='false']", text: "°F"
 
+    # Freezing line is disabled when showing Celsius
+    assert_match(/"freezingLine":\{"enabled":false,"value":32,"color":"#ef4444","lineWidth":1\}/, response.body)
+
     # Current temperature shows 22.0°C and does NOT contain parenthesis with Fahrenheit
     assert_select "p", text: /22\.0°C/
     assert_select "p", text: /\(71\.6°F\)/, count: 0
@@ -119,6 +122,9 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     # Toggle button for Fahrenheit is active
     assert_select "button[data-unit='F'][aria-pressed='true']", text: "°F"
     assert_select "button[data-unit='C'][aria-pressed='false']", text: "°C"
+
+    # Freezing line at 32°F is enabled when showing Fahrenheit
+    assert_match(/"freezingLine":\{"enabled":true,"value":32,"color":"#ef4444","lineWidth":1\}/, response.body)
 
     # Current temperature shows 68.0°F without parenthesis
     assert_select "p", text: /68\.0°F/

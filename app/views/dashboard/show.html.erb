@@ -294,6 +294,14 @@
                 points: false,
                 empty: "No temperature readings in this time window",
                 library: {
+                  plugins: {
+                    freezingLine: {
+                      enabled: (@unit == "F"),
+                      value: 32,
+                      color: "#ef4444",
+                      lineWidth: 1
+                    }
+                  },
                   scales: {
                     x: {
                       ticks: { color: "#94a3b8" },

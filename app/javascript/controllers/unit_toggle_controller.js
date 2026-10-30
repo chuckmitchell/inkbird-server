@@ -73,8 +73,22 @@ export default class extends Controller {
         if (chart) {
           const data = (unit === "F") ? this.chartDataFValue : this.chartDataCValue
           if (data && Object.keys(data).length > 0) {
+            const baseLibrary = chart.options.library || {}
+            const basePlugins = baseLibrary.plugins || {}
+            const baseFreezingLine = basePlugins.freezingLine || {}
+
             const nextOptions = Object.assign({}, chart.options, {
-              suffix: (unit === "F") ? "°F" : "°C"
+              suffix: (unit === "F") ? "°F" : "°C",
+              library: Object.assign({}, baseLibrary, {
+                plugins: Object.assign({}, basePlugins, {
+                  freezingLine: Object.assign({}, baseFreezingLine, {
+                    enabled: (unit === "F"),
+                    value: 32,
+                    color: baseFreezingLine.color || "#ef4444",
+                    lineWidth: baseFreezingLine.lineWidth || 1
+                  })
+                })
+              })
             })
             chart.updateData(data, nextOptions)
             return true
