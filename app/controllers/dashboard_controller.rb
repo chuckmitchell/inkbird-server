@@ -2,7 +2,8 @@ class DashboardController < ApplicationController
   VALID_RANGES = {
     "24h" => { duration: 24.hours, label: "Last 24 Hours", bucket_label: "5-minute averages" },
     "7d"  => { duration: 7.days,   label: "Last 7 Days",   bucket_label: "Hourly averages" },
-    "30d" => { duration: 30.days,  label: "Last 30 Days",  bucket_label: "6-hour averages" }
+    "30d" => { duration: 30.days,  label: "Last 30 Days",  bucket_label: "6-hour averages" },
+    "90d" => { duration: 90.days,  label: "Last 90 Days",  bucket_label: "12-hour averages" }
   }.freeze
 
   def show
@@ -80,6 +81,8 @@ class DashboardController < ApplicationController
       scope.group_by_hour(:recorded_at, series: false).average(column)
     when "30d"
       scope.group_by_minute(:recorded_at, n: 360, series: false).average(column)
+    when "90d"
+      scope.group_by_minute(:recorded_at, n: 720, series: false).average(column)
     else
       scope.group_by_minute(:recorded_at, n: 5, series: false).average(column)
     end

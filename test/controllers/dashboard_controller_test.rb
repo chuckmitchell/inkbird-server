@@ -34,6 +34,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "a", text: "24h"
     assert_select "a", text: "7d"
     assert_select "a", text: "30d"
+    assert_select "a", text: "90d"
 
     get root_url(range: "7d")
     assert_response :success
@@ -44,6 +45,11 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h2", text: /Last 30 Days Summary/
     assert_select "p", text: /Showing last 30 days \(6-hour averages\)/
+
+    get root_url(range: "90d")
+    assert_response :success
+    assert_select "h2", text: /Last 90 Days Summary/
+    assert_select "p", text: /Showing last 90 days \(12-hour averages\)/
   end
 
   test "renders latest photo and recent captures on the dashboard" do

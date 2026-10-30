@@ -196,6 +196,6 @@ Stores metadata for periodic daytime JPEG snapshots saved under `/rails/storage/
 * **Interactive Time-Series Chart:**
   * Renders a single line chart for **Current Temperature** (`current_temp_c`) over time.
   * **Important:** Do **not** plot `target_temp_c` (Target Setpoint) on the chart, as that function on the thermostat is not used.
-  * Provide time-range filter controls: `24h`, `7d`, `30d`.
+  * Provide time-range filter controls: `24h`, `7d`, `30d`, `90d`.
 * **Latest Cottage Photo & Recent Captures:**
   * Displays the latest daytime photo with capture timestamp, lens, dimensions, and temperature badge, plus a strip of recent captures below.
