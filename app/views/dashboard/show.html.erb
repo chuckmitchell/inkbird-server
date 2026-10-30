@@ -36,8 +36,10 @@
         <% if @device %>
           Device ID: <code class="rounded bg-slate-900 px-1.5 py-0.5 font-mono text-xs text-slate-300"><%= @device.tuya_device_id %></code>
           <% if @device.last_seen_at %>
-            · Last seen <time datetime="<%= @device.last_seen_at.iso8601 %>" class="font-medium text-slate-200"><%= time_ago_in_words(@device.last_seen_at) %> ago</time>
-            (<%= friendly_timestamp(@device.last_seen_at) %>)
+            · Last seen <time datetime="<%= @device.last_seen_at.iso8601 %>" title="<%= friendly_timestamp(@device.last_seen_at) %>" class="font-medium text-slate-200 cursor-help border-b border-dotted border-slate-600"><%= time_ago_in_words(@device.last_seen_at) %> ago</time>
+          <% end %>
+          <% if @device.next_poll_at %>
+            · Next Expected <time datetime="<%= @device.next_poll_at.iso8601 %>" title="<%= friendly_timestamp(@device.next_poll_at) %>" class="font-medium text-slate-200 cursor-help border-b border-dotted border-slate-600"><%= relative_poll_time(@device.next_poll_at) %></time>
           <% end %>
         <% else %>
           Inkbird ITC-308 Wi-Fi Smart Thermostat Telemetry Server

@@ -43,4 +43,12 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_equal "", friendly_timestamp_short(nil)
     assert_equal "", friendly_timestamp_short("")
   end
+
+  test "relative_poll_time formats exact minutes for hourly polling" do
+    assert_equal "in 56 minutes", relative_poll_time(56.minutes.from_now)
+    assert_equal "in 12 minutes", relative_poll_time(12.minutes.from_now)
+    assert_equal "5 minutes overdue", relative_poll_time(5.minutes.ago)
+    assert_equal "", relative_poll_time(nil)
+    assert_equal "", relative_poll_time("")
+  end
 end

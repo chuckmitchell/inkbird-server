@@ -43,6 +43,7 @@ The Android `WebhookUploader` sends `HTTP POST` requests with `Content-Type: app
 {
   "device_id": "02720007bcddc234ce20",
   "timestamp_utc": "2026-10-29T16:15:00Z",
+  "next_poll_utc": "2026-10-29T17:15:00Z",
   "unit": "C",
   "current_temp_c": 29.0,
   "current_temp_f": 84.2,
@@ -75,6 +76,7 @@ The Android `WebhookUploader` sends `HTTP POST` requests with `Content-Type: app
 #### Telemetry Field Notes
 * `device_id` (String, required): Tuya hardware ID (default cottage device: `02720007bcddc234ce20`).
 * `timestamp_utc` (ISO-8601 String, required): UTC timestamp when the thermostat was polled.
+* `next_poll_utc` (ISO-8601 String, optional / nullable): UTC timestamp when the Android gateway service is next scheduled to poll the thermostat.
 * `unit` (String): `"C"` or `"F"`, default `"C"`.
 * `current_temp_c` / `current_temp_f` (Float, nullable): Measured temperature in Celsius and Fahrenheit.
 * `target_temp_c` (Float, nullable): Thermostat setpoint (stored in DB for completeness, **not** plotted on the UI chart).
@@ -114,6 +116,7 @@ Tracks known thermostats and caches their latest state for fast dashboard lookup
 * `tuya_device_id` (`string`, `null: false`, unique index) — maps to payload `device_id`
 * `name` (`string`, default: `"Cottage ITC-308"`)
 * `last_seen_at` (`datetime`, indexed) — updated on every ingested reading (`[last_seen_at, recorded_at].compact.max`)
+* `next_poll_at` (`datetime`, indexed) — expected time of next scheduled poll
 * `last_temp_c` (`float`)
 * `last_temp_f` (`float`)
 * `last_unit` (`string`, default: `"C"`)
@@ -124,6 +127,7 @@ Tracks known thermostats and caches their latest state for fast dashboard lookup
 Stores the historical time-series data.
 * `device_id` (`references :device`, `null: false`, foreign key)
 * `recorded_at` (`datetime`, `null: false`) — parsed from `timestamp_utc`
+* `next_poll_at` (`datetime`) — parsed from `next_poll_utc`
 * `unit` (`string`, `null: false`, default: `"C"`)
 * `current_temp_c` (`float`)
 * `current_temp_f` (`float`)

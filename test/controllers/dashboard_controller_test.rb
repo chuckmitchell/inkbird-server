@@ -164,8 +164,8 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     get root_url
     assert_response :success
 
-    # Header and reading table use friendly full format with ADT
-    assert_select "p", text: /Friday October 30, 2026 - 11:50am \(ADT\)/
+    # Header time element has friendly timestamp hover title, and reading table displays it in body
+    assert_select "p time[title=?]", "Friday October 30, 2026 - 11:50am (ADT)"
     assert_select "td", text: "Friday October 30, 2026 - 11:50am (ADT)"
 
     # Table header is "Timestamp" instead of "Timestamp (UTC)"
@@ -174,5 +174,28 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     # Recent capture thumbnail uses compact format for small spaces
     assert_select "div", text: "Fri, Oct 30, 2026 - 11:40am"
+  end
+
+  test "renders Last seen and Next Expected with friendly timestamp title hovers" do
+    device = Device.create!(tuya_device_id: "02720007bcddc234ce20", name: "Cottage ITC-308")
+    recorded_time = 8.minutes.ago
+    next_poll_time = 56.minutes.from_now
+    reading = device.telemetry_readings.create!(
+      recorded_at: recorded_time,
+      next_poll_at: next_poll_time,
+      unit: "C",
+      current_temp_c: 21.0,
+      current_temp_f: 69.8,
+      relay_state: "cooling"
+    )
+    device.refresh_cached_state!(reading)
+
+    get root_url
+    assert_response :success
+
+    assert_select "p", text: /Last seen 8 minutes ago/
+    assert_select "p", text: /Next Expected in 56 minutes/
+    assert_select "p time[title=?]", ApplicationHelper.friendly_timestamp(recorded_time)
+    assert_select "p time[title=?]", ApplicationHelper.friendly_timestamp(next_poll_time)
   end
 end

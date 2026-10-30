@@ -20,13 +20,34 @@ class DeviceTest < ActiveSupport::TestCase
     assert_not device.online?
   end
 
+  test "online? considers next_poll_at with grace period" do
+    device = Device.new(
+      tuya_device_id: "dev-poll-online",
+      last_seen_at: 10.minutes.ago,
+      next_poll_at: 50.minutes.from_now
+    )
+    assert device.online?
+
+    # Within grace period (e.g., polled 65 mins ago, scheduled 5 mins ago, within 15-min grace)
+    device.last_seen_at = 65.minutes.ago
+    device.next_poll_at = 5.minutes.ago
+    assert device.online?
+
+    # Exceeded grace period (e.g., polled 80 mins ago, scheduled 20 mins ago, past 15-min grace)
+    device.last_seen_at = 80.minutes.ago
+    device.next_poll_at = 20.minutes.ago
+    assert_not device.online?
+  end
+
   test "refresh_cached_state! updates cached fields only when reading is newest" do
     device = Device.create!(tuya_device_id: "dev-2")
     newer_time = Time.utc(2026, 10, 29, 16, 15, 0)
+    newer_poll_time = Time.utc(2026, 10, 29, 17, 15, 0)
     older_time = Time.utc(2026, 10, 29, 16, 10, 0)
 
     newer_reading = device.telemetry_readings.create!(
       recorded_at: newer_time,
+      next_poll_at: newer_poll_time,
       unit: "C",
       current_temp_c: 22.5,
       current_temp_f: 72.5,
@@ -35,11 +56,13 @@ class DeviceTest < ActiveSupport::TestCase
     device.refresh_cached_state!(newer_reading)
 
     assert_equal newer_time, device.last_seen_at
+    assert_equal newer_poll_time, device.next_poll_at
     assert_in_delta 22.5, device.last_temp_c, 0.01
     assert_equal "cooling", device.last_relay_state
 
     older_reading = device.telemetry_readings.create!(
       recorded_at: older_time,
+      next_poll_at: newer_poll_time - 10.minutes,
       unit: "C",
       current_temp_c: 18.0,
       current_temp_f: 64.4,
@@ -48,6 +71,7 @@ class DeviceTest < ActiveSupport::TestCase
     device.refresh_cached_state!(older_reading)
 
     assert_equal newer_time, device.last_seen_at
+    assert_equal newer_poll_time, device.next_poll_at
     assert_in_delta 22.5, device.last_temp_c, 0.01
     assert_equal "cooling", device.last_relay_state
   end

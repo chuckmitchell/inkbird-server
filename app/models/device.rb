@@ -1,5 +1,6 @@
 class Device < ApplicationRecord
   ONLINE_THRESHOLD = 130.minutes
+  POLL_GRACE_PERIOD = 15.minutes
 
   has_many :telemetry_readings, dependent: :destroy
   has_many :device_photos, dependent: :destroy
@@ -11,7 +12,13 @@ class Device < ApplicationRecord
   end
 
   def online?
-    last_seen_at.present? && last_seen_at >= ONLINE_THRESHOLD.ago
+    return false if last_seen_at.blank?
+
+    if next_poll_at.present? && next_poll_at > last_seen_at
+      Time.current <= next_poll_at + POLL_GRACE_PERIOD
+    else
+      last_seen_at >= ONLINE_THRESHOLD.ago
+    end
   end
 
   def effective_last_temp_f
@@ -22,13 +29,15 @@ class Device < ApplicationRecord
     new_last_seen_at = [ last_seen_at, reading.recorded_at ].compact.max
 
     if last_seen_at.nil? || reading.recorded_at >= last_seen_at
-      update!(
+      attrs = {
         last_seen_at: new_last_seen_at,
         last_temp_c: reading.current_temp_c,
         last_temp_f: reading.current_temp_f,
         last_unit: reading.unit.presence || "C",
         last_relay_state: reading.relay_state
-      )
+      }
+      attrs[:next_poll_at] = reading.next_poll_at if reading.respond_to?(:next_poll_at)
+      update!(attrs)
     else
       update!(last_seen_at: new_last_seen_at)
     end
