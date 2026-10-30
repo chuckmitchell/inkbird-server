@@ -1,0 +1,24 @@
+<% grouped_photos.each do |date, photos| %>
+  <section aria-labelledby="date-heading-<%= date.to_s %>" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6 shadow-sm">
+    <div class="mb-4 flex items-center justify-between border-b border-slate-800/80 pb-3">
+      <div class="flex items-baseline gap-3">
+        <h2 id="date-heading-<%= date.to_s %>" class="text-lg font-bold text-white">
+          <%= photo_date_heading(date) %>
+        </h2>
+        <span class="font-mono text-xs text-slate-400">
+          <%= date.strftime("%Y-%m-%d") %>
+        </span>
+      </div>
+
+      <span class="rounded-md bg-slate-800 px-2.5 py-1 font-mono text-xs text-slate-300">
+        <%= pluralize(photos.size, "photo") %>
+      </span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <% photos.each do |photo| %>
+        <%= render partial: "photos/card", locals: { photo: photo } %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

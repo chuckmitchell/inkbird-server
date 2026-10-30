@@ -10,6 +10,9 @@ Rails.application.routes.draw do
   end
 
   resources :photos, only: [ :show ]
+  resources :devices, only: [] do
+    resources :photos, only: [ :index ]
+  end
 
   root "dashboard#show"
 end

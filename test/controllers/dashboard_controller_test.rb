@@ -68,5 +68,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "img[src='#{photo_path(photo2)}']"
     assert_select "img[src='#{photo_path(photo1)}']"
     assert_select "span", text: "29.0°C"
+    assert_select "a[href=?]", device_photos_path(device), text: /View all photos/
+    assert_select "a[href=?]", device_photos_path(device), text: /View all captures/
   end
 end

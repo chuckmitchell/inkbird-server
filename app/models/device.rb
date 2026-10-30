@@ -6,6 +6,10 @@ class Device < ApplicationRecord
 
   validates :tuya_device_id, presence: true, uniqueness: true
 
+  def to_param
+    tuya_device_id
+  end
+
   def online?
     last_seen_at.present? && last_seen_at >= ONLINE_THRESHOLD.ago
   end
