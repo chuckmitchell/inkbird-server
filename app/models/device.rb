@@ -10,6 +10,10 @@ class Device < ApplicationRecord
     last_seen_at.present? && last_seen_at >= ONLINE_THRESHOLD.ago
   end
 
+  def effective_last_temp_f
+    last_temp_f.presence || (last_temp_c.present? ? ((last_temp_c * 9.0 / 5.0) + 32.0).round(1) : nil)
+  end
+
   def refresh_cached_state!(reading)
     new_last_seen_at = [ last_seen_at, reading.recorded_at ].compact.max
 

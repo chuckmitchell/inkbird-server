@@ -38,6 +38,11 @@ class DevicePhoto < ApplicationRecord
     file_path.present? && File.exist?(absolute_file_path)
   end
 
+  def current_temp_f
+    return nil if current_temp_c.blank?
+    ((current_temp_c * 9.0 / 5.0) + 32.0).round(1)
+  end
+
   def write_image_bytes!(bytes)
     full_path = absolute_file_path
     FileUtils.mkdir_p(File.dirname(full_path))

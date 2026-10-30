@@ -69,4 +69,61 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "img[src='#{photo_path(photo1)}']"
     assert_select "span", text: "29.0°C"
   end
+
+  test "renders unit toggle in title bar with Celsius default and removes parenthesis around Fahrenheit" do
+    device = Device.create!(tuya_device_id: "02720007bcddc234ce20", name: "Cottage ITC-308")
+    reading = device.telemetry_readings.create!(
+      recorded_at: 1.minute.ago,
+      unit: "C",
+      current_temp_c: 22.0,
+      current_temp_f: 71.6,
+      relay_state: "cooling"
+    )
+    device.refresh_cached_state!(reading)
+
+    get root_url
+    assert_response :success
+
+    # Toggle buttons exist in title bar
+    assert_select "button[data-unit='C'][aria-pressed='true']", text: "°C"
+    assert_select "button[data-unit='F'][aria-pressed='false']", text: "°F"
+
+    # Current temperature shows 22.0°C and does NOT contain parenthesis with Fahrenheit
+    assert_select "p", text: /22\.0°C/
+    assert_select "p", text: /\(71\.6°F\)/, count: 0
+
+    # Data table retains both units
+    assert_select "th", text: "Temp (°C)"
+    assert_select "th", text: "Temp (°F)"
+    assert_select "td", text: "22.0°C"
+    assert_select "td", text: "71.6°F"
+  end
+
+  test "remembers preferred unit when cookie is set to Fahrenheit" do
+    device = Device.create!(tuya_device_id: "02720007bcddc234ce20", name: "Cottage ITC-308")
+    reading = device.telemetry_readings.create!(
+      recorded_at: 1.minute.ago,
+      unit: "C",
+      current_temp_c: 20.0,
+      current_temp_f: 68.0,
+      relay_state: "cooling"
+    )
+    device.refresh_cached_state!(reading)
+
+    cookies[:inkbird_temp_unit] = "F"
+    get root_url
+    assert_response :success
+
+    # Toggle button for Fahrenheit is active
+    assert_select "button[data-unit='F'][aria-pressed='true']", text: "°F"
+    assert_select "button[data-unit='C'][aria-pressed='false']", text: "°C"
+
+    # Current temperature shows 68.0°F without parenthesis
+    assert_select "p", text: /68\.0°F/
+    assert_select "p", text: /\(68\.0°F\)/, count: 0
+
+    # Data table still retains both units
+    assert_select "th", text: "Temp (°C)"
+    assert_select "th", text: "Temp (°F)"
+  end
 end
